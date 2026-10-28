@@ -1,0 +1,135 @@
+"use client";
+
+import { useState } from "react";
+import { CloudSun, LocateFixed } from "lucide-react";
+import { useProvider } from "@/lib/api";
+import { useT } from "@/lib/i18n";
+import { usePrefs } from "@/lib/store";
+import { weatherIcon, weatherLabel } from "@/lib/weather-codes";
+import type { WeatherForecast } from "@/server/providers/openmeteo";
+import { Card, CardHeader, DataMeta, ErrorState, ListSkeleton } from "../ui";
+
+export interface WxLocation {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
+const DEFAULT_LOC: WxLocation = { name: "Berlin", lat: 52.52, lon: 13.41 };
+
+export function useWeatherLocation() {
+  const places = usePrefs((s) => s.places);
+  const homeId = usePrefs((s) => s.homePlaceId);
+  const [geo, setGeo] = useState<WxLocation | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const home = places.find((p) => p.id === homeId);
+  const loc: WxLocation = geo ?? (home ? { name: home.name, lat: home.lat, lon: home.lon } : DEFAULT_LOC);
+  const locate = (label: string) => {
+    if (!navigator.geolocation) return setGeoError("Geolocation not supported");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setGeo({ name: label, lat: Math.round(p.coords.latitude * 100) / 100, lon: Math.round(p.coords.longitude * 100) / 100 });
+        setGeoError(null);
+      },
+      (e) => setGeoError(e.message),
+      { timeout: 10_000, maximumAge: 600_000 },
+    );
+  };
+  return { loc, locate, geoError, setLoc: setGeo };
+}
+
+function hourLabel(unix: number, offset: number) {
+  // Open-Meteo returns unix times; show the forecast location's local hour.
+  return new Date((unix + offset) * 1000).getUTCHours().toString().padStart(2, "0");
+}
+
+export function WeatherSummary({ wx, compact }: { wx: WeatherForecast; compact?: boolean }) {
+  const { t, lang } = useT();
+  const c = wx.current;
+  const nowIdx = Math.max(0, wx.hourly.time.findIndex((h) => h >= c.time - 3600));
+  const hours = wx.hourly.time.slice(nowIdx, nowIdx + 24).map((h, i) => ({
+    h,
+    temp: wx.hourly.temperature_2m[nowIdx + i],
+    code: wx.hourly.weather_code[nowIdx + i],
+    pop: wx.hourly.precipitation_probability[nowIdx + i],
+  }));
+  return (
+    <div>
+      <div className="flex items-center gap-4 px-4">
+        <div className="text-[48px]" aria-hidden>{weatherIcon(c.weather_code)}</div>
+        <div>
+          <div className="text-[40px] leading-none font-semibold tracking-tight tabular">{c.temperature_2m != null ? Math.round(c.temperature_2m) : "–"}°</div>
+          <div className="text-[14px] text-text-2">{weatherLabel(c.weather_code, lang)}</div>
+        </div>
+        <dl className="ml-auto grid grid-cols-[auto_auto] gap-x-2 text-[12px] text-text-2 tabular">
+          <dt>{t("weather.feelsLike")}</dt><dd className="text-right text-text">{c.apparent_temperature != null ? Math.round(c.apparent_temperature) : "–"}°</dd>
+          <dt>{t("weather.wind")}</dt><dd className="text-right text-text">{c.wind_speed_10m ?? "–"} km/h</dd>
+          <dt>{t("weather.gusts")}</dt><dd className="text-right text-text">{c.wind_gusts_10m ?? "–"} km/h</dd>
+          <dt>{t("weather.precip")}</dt><dd className="text-right text-text">{c.precipitation ?? 0} mm</dd>
+        </dl>
+      </div>
+      <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4 pb-1" aria-label={t("weather.next24")}>
+        {hours.slice(0, compact ? 12 : 24).map((h) => (
+          <div key={h.h} className="flex shrink-0 flex-col items-center gap-0.5 text-[12px] tabular">
+            <span className="text-text-2">{hourLabel(h.h, wx.utc_offset_seconds)}</span>
+            <span aria-hidden>{weatherIcon(h.code)}</span>
+            <span className="font-medium">{h.temp != null ? Math.round(h.temp) : "–"}°</span>
+            {h.pop != null && h.pop > 0 && <span className="text-[10px] text-blue">{h.pop}%</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function WeatherDaily({ wx }: { wx: WeatherForecast }) {
+  const { lang } = useT();
+  const d = wx.daily;
+  const min = Math.min(...d.temperature_2m_min.filter((v): v is number => v != null));
+  const max = Math.max(...d.temperature_2m_max.filter((v): v is number => v != null));
+  return (
+    <ul className="divide-y divide-[var(--separator)]">
+      {d.time.map((day, i) => {
+        const lo = d.temperature_2m_min[i];
+        const hi = d.temperature_2m_max[i];
+        const left = lo != null ? ((lo - min) / (max - min || 1)) * 100 : 0;
+        const width = lo != null && hi != null ? ((hi - lo) / (max - min || 1)) * 100 : 0;
+        return (
+          <li key={day} className="flex items-center gap-3 px-4 py-2.5 text-[15px] tabular">
+            <span className="w-12 text-text-2">{new Date((day + wx.utc_offset_seconds) * 1000).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { weekday: "short", timeZone: "UTC" })}</span>
+            <span aria-hidden className="w-7">{weatherIcon(d.weather_code[i])}</span>
+            <span className="w-9 text-right text-text-2">{lo != null ? Math.round(lo) : "–"}°</span>
+            <span className="relative h-1.5 flex-1 rounded-full bg-surface-2">
+              <span className="absolute h-full rounded-full bg-gradient-to-r from-[#64d2ff] to-[#ffd60a]" style={{ left: `${left}%`, width: `${Math.max(width, 4)}%` }} />
+            </span>
+            <span className="w-9">{hi != null ? Math.round(hi) : "–"}°</span>
+            <span className="w-12 text-right text-[12px] text-blue">{d.precipitation_sum[i] ? `${d.precipitation_sum[i]} mm` : ""}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function WeatherWidget() {
+  const { t } = useT();
+  const { loc, locate, geoError } = useWeatherLocation();
+  const q = useProvider<WeatherForecast>("weather", { lat: loc.lat, lon: loc.lon });
+  return (
+    <Card>
+      <CardHeader
+        title={`${t("widget.weather")} · ${loc.name}`}
+        icon={<CloudSun size={18} />}
+        href="/explore/weather"
+        action={
+          <button onClick={() => locate(t("time.local"))} className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-accent" aria-label={t("weather.useLocation")}>
+            <LocateFixed size={16} />
+          </button>
+        }
+      />
+      {q.isPending ? <ListSkeleton rows={2} /> : q.data?.data ? <WeatherSummary wx={q.data.data} compact /> : <ErrorState message={q.data?.error ?? q.error?.message ?? ""} onRetry={() => q.refetch()} compact />}
+      {geoError && <div className="px-4 pt-1 text-[11px] text-red">{geoError}</div>}
+      <DataMeta env={q.data} className="px-4 pt-2 pb-3" />
+    </Card>
+  );
+}

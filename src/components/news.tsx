@@ -1,0 +1,124 @@
+"use client";
+
+import { Bookmark, BookmarkCheck, Share } from "lucide-react";
+import { useMemo } from "react";
+import { useProvider } from "@/lib/api";
+import { useT, type TKey } from "@/lib/i18n";
+import { applyInterests } from "@/lib/news/score";
+import type { NewsCluster, NewsPayload } from "@/lib/news/types";
+import { COUNTRY_BY_ISO2 } from "@/lib/news/geotag";
+import { usePrefs } from "@/lib/store";
+import { useSelection } from "@/lib/selection";
+import { ExternalButton, RelTime, cn } from "./ui";
+
+export function useNews() {
+  const q = useProvider<NewsPayload>("news");
+  const topics = usePrefs((s) => s.topics);
+  const countries = usePrefs((s) => s.countries);
+  const clusters = useMemo(() => {
+    const c = q.data?.data?.clusters ?? [];
+    return topics.length || countries.length ? applyInterests(c, { topics, countries }) : c;
+  }, [q.data, topics, countries]);
+  return { ...q, clusters };
+}
+
+export function NewsLabel({ c }: { c: NewsCluster }) {
+  const { t } = useT();
+  if (c.breaking) return <span className="rounded-[5px] bg-red px-1.5 py-[1px] text-[10px] font-bold tracking-wide text-white uppercase">{t("overview.breaking")}</span>;
+  return null;
+}
+
+export function NewsRow({ c, compact }: { c: NewsCluster; compact?: boolean }) {
+  const { t } = useT();
+  const select = useSelection((s) => s.select);
+  const country = c.countries[0] ? COUNTRY_BY_ISO2.get(c.countries[0]) : undefined;
+  return (
+    <button onClick={() => select({ type: "news", cluster: c })} className="flex w-full flex-col gap-1 px-4 py-3 text-left active:bg-surface-2">
+      <div className="flex items-center gap-2 text-[12px] text-text-2">
+        <NewsLabel c={c} />
+        <span className="font-medium">{c.articles[0].sourceName}</span>
+        {c.sourceCount > 1 && <span>+{c.sourceCount - 1}</span>}
+        <span aria-hidden>·</span>
+        <RelTime iso={c.lastUpdated} />
+        {country && <span className="ml-auto truncate">{country.flag}</span>}
+      </div>
+      <div className={cn("font-semibold tracking-tight", compact ? "text-[15px] leading-snug" : "text-[16px] leading-snug")}>{c.title}</div>
+      {!compact && c.summary && <div className="line-clamp-2 text-[13px] text-text-2">{c.summary}</div>}
+      {!compact && c.topics.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-0.5">
+          {c.topics.slice(0, 3).map((tp) => (
+            <span key={tp} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">{t(`topic.${tp}` as TKey)}</span>
+          ))}
+        </div>
+      )}
+    </button>
+  );
+}
+
+export function NewsDetail({ c }: { c: NewsCluster }) {
+  const { t, lang } = useT();
+  const bookmarks = usePrefs((s) => s.bookmarks);
+  const toggle = usePrefs((s) => s.toggleBookmark);
+  const saved = bookmarks.some((b) => b.id === c.id);
+  const countries = c.countries.map((k) => COUNTRY_BY_ISO2.get(k)).filter(Boolean);
+  const share = () => navigator.share?.({ title: c.title, url: c.url }).catch(() => undefined);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-[12px] text-text-2">
+        <NewsLabel c={c} />
+        <RelTime iso={c.lastUpdated} />
+        <span aria-hidden>·</span>
+        <span>{t("news.sourcesCount", { n: c.sourceCount })}</span>
+      </div>
+      <h3 className="text-[20px] leading-snug font-bold tracking-tight">{c.title}</h3>
+      {c.summary && <p className="text-[15px] leading-relaxed text-text-2">{c.summary}</p>}
+      {countries.length > 0 && (
+        <div className="text-[13px] text-text-2">
+          {countries.map((k) => `${k!.flag} ${lang === "de" ? k!.de : k!.en}`).join(" · ")}
+          <div className="text-[11px] text-text-3">{t("common.approxLocation")}</div>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <ExternalButton href={c.url} className="flex-1">{t("common.openOriginal")}</ExternalButton>
+        <button
+          onClick={() => toggle({ id: c.id, title: c.title, url: c.url, source: c.articles[0].sourceName, time: c.lastUpdated })}
+          className="grid h-[44px] w-[44px] place-items-center rounded-xl bg-surface-2 text-accent"
+          aria-label={saved ? t("common.bookmarked") : t("common.bookmark")}
+        >
+          {saved ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
+        </button>
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button onClick={share} className="grid h-[44px] w-[44px] place-items-center rounded-xl bg-surface-2 text-accent" aria-label={t("common.share")}>
+            <Share size={20} />
+          </button>
+        )}
+      </div>
+      <div>
+        <div className="mb-1 text-[13px] font-semibold text-text-2 uppercase">{t("news.coverage")}</div>
+        <ul className="divide-y divide-[var(--separator)] rounded-xl bg-surface-2">
+          {c.articles.map((a) => (
+            <li key={a.id}>
+              <a href={a.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2.5">
+                <div className="text-[12px] text-text-2">
+                  <span className="font-semibold text-text">{a.sourceName}</span> · <RelTime iso={a.publishedAt} /> · {a.lang.toUpperCase()}
+                </div>
+                <div className="text-[14px] leading-snug">{a.title}</div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <details className="rounded-xl bg-surface-2 px-3 py-2 text-[13px]">
+        <summary className="cursor-pointer font-medium">{t("common.why")} · {c.score.total}</summary>
+        <dl className="mt-2 grid grid-cols-[1fr_auto] gap-y-1 tabular text-text-2">
+          <dt>{t("score.severity")}</dt><dd>{c.score.severity}</dd>
+          <dt>{t("score.sources")}</dt><dd>{c.score.sources}</dd>
+          <dt>{t("score.recency")}</dt><dd>{c.score.recency}</dd>
+          <dt>{t("score.reliability")}</dt><dd>{c.score.reliability}</dd>
+          <dt>{t("score.interest")}</dt><dd>{c.score.interest}</dd>
+        </dl>
+        <p className="mt-2 text-[11px] text-text-3">{t("score.disclaimer")}</p>
+      </details>
+    </div>
+  );
+}
