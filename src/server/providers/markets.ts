@@ -134,67 +134,74 @@ export const fxProvider = defineProvider({
 // Exported for tests
 export { FxLatest };
 
-/* ------------------------------------------------------------------ Indices & commodities (Stooq) */
+/* ------------------------------------------------------------------ Indices & oil (FRED, St. Louis Fed) */
 
-export const STOOQ_SYMBOLS = [
-  { sym: "^spx", id: "spx", label: "S&P 500", group: "index", currency: "USD" },
-  { sym: "^ndq", id: "ndq", label: "NASDAQ Composite", group: "index", currency: "USD" },
-  { sym: "^dji", id: "dji", label: "Dow Jones", group: "index", currency: "USD" },
-  { sym: "^dax", id: "dax", label: "DAX", group: "index", currency: "EUR" },
-  { sym: "^ukx", id: "ukx", label: "FTSE 100", group: "index", currency: "GBP" },
-  { sym: "^nkx", id: "nkx", label: "Nikkei 225", group: "index", currency: "JPY" },
-  { sym: "xauusd", id: "gold", label: "Gold (XAU/USD)", group: "commodity", currency: "USD" },
-  { sym: "cb.f", id: "brent", label: "Brent Öl (Future)", group: "commodity", currency: "USD" },
-  { sym: "cl.f", id: "wti", label: "WTI Öl (Future)", group: "commodity", currency: "USD" },
+export const FRED_SERIES = [
+  { id: "SP500", label: "S&P 500", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
+  { id: "NASDAQCOM", label: "NASDAQ Composite", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
+  { id: "DJIA", label: "Dow Jones", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
+  { id: "NIKKEI225", label: "Nikkei 225", group: "index", currency: "JPY", note: "Schlusskurs Vortag / previous close" },
+  { id: "DCOILBRENTEU", label: "Brent (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay" },
+  { id: "DCOILWTICO", label: "WTI (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay" },
 ] as const;
 
-/** Parse Stooq quote CSV (fields s,d2,t2,o,h,l,c). */
-export function parseStooq(csv: string): Quote[] {
-  const lines = csv.trim().split(/\r?\n/);
-  const header = lines.shift()?.toLowerCase().split(",") ?? [];
-  const idx = (n: string) => header.indexOf(n);
-  const out: Quote[] = [];
-  for (const line of lines) {
-    const c = line.split(",");
-    const sym = c[idx("symbol")]?.toLowerCase();
-    const def = STOOQ_SYMBOLS.find((s) => s.sym === sym);
-    const close = Number(c[idx("close")]);
-    const open = Number(c[idx("open")]);
-    const date = c[idx("date")];
-    const time = c[idx("time")] ?? "00:00:00";
-    if (!def || !Number.isFinite(close) || !/^\d{4}-\d{2}-\d{2}$/.test(date ?? "")) continue;
-    out.push({
-      id: def.id,
-      label: def.label,
-      group: def.group,
-      price: close,
-      currency: def.currency,
-      changePct: Number.isFinite(open) && open !== 0 ? ((close - open) / open) * 100 : null,
-      changeBasis: "since session open",
-      // Stooq reports exchange-local/CET timestamps; we keep date+time without claiming a zone.
-      asOf: `${date} ${time}`,
-      delayNote: "delayed ≥ 15 min",
-    });
-  }
-  return out;
+/** Parse fredgraph.csv (header "observation_date,<ID>"; missing values are "." or empty). */
+export function parseFredCsv(csv: string): { t: string; v: number }[] {
+  return csv
+    .trim()
+    .split(/\r?\n/)
+    .slice(1)
+    .map((l) => l.split(","))
+    .filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v !== "." && v !== "" && Number.isFinite(Number(v)))
+    .map(([d, v]) => ({ t: d, v: Number(v) }));
 }
 
-export const stooqProvider = defineProvider({
+export function fredQuote(def: (typeof FRED_SERIES)[number], rows: { t: string; v: number }[]): Quote | null {
+  const last = rows.at(-1);
+  if (!last) return null;
+  const prev = rows.at(-2);
+  return {
+    id: def.id,
+    label: def.label,
+    group: def.group,
+    price: last.v,
+    currency: def.currency,
+    changePct: prev ? ((last.v - prev.v) / prev.v) * 100 : null,
+    changeBasis: "vs. previous close",
+    asOf: `${last.t}T21:00:00.000Z`,
+    delayNote: def.note,
+  };
+}
+
+export const fredProvider = defineProvider({
   id: "markets",
-  label: "Stooq – delayed index & commodity quotes",
+  label: "FRED (Federal Reserve Bank of St. Louis) – daily index & oil closes",
   category: "market",
-  refreshSeconds: 600,
+  refreshSeconds: 3 * 3600,
   freshnessClass: "delayed",
-  attribution: { name: "Stooq", url: "https://stooq.com", license: "Free quotes for personal use" },
-  rateLimit: "Undocumented daily limit – ATLAS polls every 10 minutes with one batched request.",
-  note: "Delayed quotes (typically 15+ minutes, some end-of-day). Change is measured since today's open.",
+  attribution: { name: "FRED, Federal Reserve Bank of St. Louis (S&P Dow Jones Indices, Nasdaq, Nikkei, EIA)", url: "https://fred.stlouisfed.org", license: "Personal, non-commercial use; index data © respective owners" },
+  rateLimit: "Public CSV download, no key; ATLAS fetches every 3 hours.",
+  note: "End-of-day closes (previous trading day), not live prices. DAX, FTSE 100 and gold have no free, licence-clean source and are not shown.",
   params: z.object({}),
-  cacheKey: () => "quotes",
+  cacheKey: () => "eod",
   async fetch() {
-    const syms = STOOQ_SYMBOLS.map((s) => s.sym).join("+");
-    const csv = await fetchText(`https://stooq.com/q/l/?s=${encodeURIComponent(syms).replace(/%2B/g, "+")}&f=sd2t2ohlc&h&e=csv`);
-    const data = parseStooq(csv);
-    if (!data.length) throw new Error("Stooq returned no quotes");
-    return { data, sourceUpdatedAt: null };
+    const since = new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10);
+    const results = await Promise.allSettled(
+      FRED_SERIES.map((s) => fetchText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${s.id}&cosd=${since}`, { timeoutMs: 25_000 })),
+    );
+    const quotes: Quote[] = [];
+    const history: Record<string, { t: string; v: number }[]> = {};
+    results.forEach((r, i) => {
+      if (r.status !== "fulfilled") return;
+      const rows = parseFredCsv(r.value);
+      const q = fredQuote(FRED_SERIES[i], rows);
+      if (q) {
+        quotes.push(q);
+        history[q.id] = rows.slice(-60);
+      }
+    });
+    if (!quotes.length) throw new Error("FRED returned no data");
+    const newest = quotes.filter((q) => q.group === "index").reduce((m, q) => (q.asOf > m ? q.asOf : m), "");
+    return { data: { quotes, history }, sourceUpdatedAt: newest || null };
   },
 });

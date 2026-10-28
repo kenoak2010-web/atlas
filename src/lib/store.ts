@@ -57,12 +57,14 @@ export interface Prefs {
   bookmarks: Bookmark[];
   savedSearches: string[];
   watchedAirports: string[];
+  /** Market symbols pinned to the economy watchlist */
+  watchlist: string[];
   alerts: AlertSettings;
 }
 
 interface Actions {
   set: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
-  toggleIn: <K extends "topics" | "countries" | "mapLayers" | "favoriteChannels" | "hiddenWidgets" | "savedSearches" | "watchedAirports">(key: K, value: Prefs[K][number]) => void;
+  toggleIn: <K extends "topics" | "countries" | "mapLayers" | "favoriteChannels" | "hiddenWidgets" | "savedSearches" | "watchedAirports" | "watchlist">(key: K, value: Prefs[K][number]) => void;
   moveWidget: (id: WidgetId, dir: -1 | 1) => void;
   addPlace: (p: Omit<SavedPlace, "id">) => void;
   removePlace: (id: string) => void;
@@ -86,6 +88,7 @@ export const DEFAULT_PREFS: Prefs = {
   bookmarks: [],
   savedSearches: [],
   watchedAirports: [],
+  watchlist: [],
   alerts: {
     enabled: true,
     notify: false,

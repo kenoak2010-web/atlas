@@ -132,10 +132,10 @@ export function QuoteTile({ q }: { q: Quote }) {
 
 export function MarketsWidget() {
   const { t } = useT();
-  const idx = useProvider<Quote[]>("markets");
+  const idx = useProvider<{ quotes: Quote[] }>("markets");
   const crypto = useProvider<Quote[]>("crypto");
   const fx = useProvider<{ quotes: Quote[] }>("fx");
-  const quotes = [...(idx.data?.data ?? []).slice(0, 4), ...(crypto.data?.data ?? []), ...(fx.data?.data?.quotes ?? []).slice(0, 2)];
+  const quotes = [...(idx.data?.data?.quotes ?? []).slice(0, 4), ...(crypto.data?.data ?? []), ...(fx.data?.data?.quotes ?? []).slice(0, 2)];
   const pending = idx.isPending && crypto.isPending && fx.isPending;
   return (
     <Card>

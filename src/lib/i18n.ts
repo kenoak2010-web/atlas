@@ -3,6 +3,12 @@
 import { usePrefs, type Lang } from "./store";
 
 const de = {
+  "alertKind.quake": "Erdbeben",
+  "alertKind.news": "Eilmeldung",
+  "alertKind.weather": "Unwetter",
+  "alertKind.disaster": "Katastrophe",
+  "alertKind.market": "Markt",
+  "alertKind.region": "Gespeicherter Ort",
   "cat.news": "Nachrichten",
   "cat.earthquake": "Erdbeben",
   "cat.weather-alert": "Unwetterwarnung",
@@ -257,6 +263,12 @@ type Dict = typeof de;
 export type TKey = keyof Dict;
 
 const en: Dict = {
+  "alertKind.quake": "Earthquake",
+  "alertKind.news": "Breaking",
+  "alertKind.weather": "Severe weather",
+  "alertKind.disaster": "Disaster",
+  "alertKind.market": "Market",
+  "alertKind.region": "Saved place",
   "cat.news": "News",
   "cat.earthquake": "Earthquake",
   "cat.weather-alert": "Weather warning",

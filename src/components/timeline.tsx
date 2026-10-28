@@ -22,6 +22,8 @@ export function useTimeline(filter: TimelineFilter) {
     relief: useProvider<AtlasEvent[]>("humanitarian"),
   };
   const { news, quakes, gdacs, eonet, de, us, volcano, relief } = sources;
+  const catKey = filter.categories.join();
+  const regionKey = filter.regions.join();
   const items = useMemo(() => {
     const all: TimelineItem[] = [
       ...(news.data?.data?.clusters ?? []).filter((c) => c.sourceCount > 1 || c.breaking || c.score.severity >= 20).map(clusterToItem),
@@ -29,7 +31,7 @@ export function useTimeline(filter: TimelineFilter) {
     ];
     return buildTimeline(all, filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [news.data, quakes.data, gdacs.data, eonet.data, de.data, us.data, volcano.data, relief.data, filter.maxAgeH, filter.categories.join(), filter.regions.join()]);
+  }, [news.data, quakes.data, gdacs.data, eonet.data, de.data, us.data, volcano.data, relief.data, filter.maxAgeH, catKey, regionKey]);
   const pending = Object.values(sources).some((q) => q.isPending);
   const failed = Object.entries(sources)
     .filter(([, q]) => q.data && !q.data.data)

@@ -53,7 +53,7 @@ export function normalizeGdacs(features: z.infer<typeof GdacsFeature>[]): AtlasE
       id,
       category: p.eventtype === "VO" ? "volcano" : p.eventtype === "WF" ? "wildfire" : "disaster",
       title: p.name ? `${type}: ${p.name}` : `${type}${p.country ? ` – ${p.country}` : ""}`,
-      description: htmlToText(p.description ?? p.severitydata?.severitytext ?? "", 300) || undefined,
+      description: htmlToText((p.htmldescription as string | undefined) ?? p.severitydata?.severitytext ?? p.description ?? "", 300) || undefined,
       locationName: p.country,
       point: { ...pt, precision: "area" },
       source: { name: "GDACS", url: "https://www.gdacs.org" },
@@ -79,7 +79,7 @@ export const gdacsProvider = defineProvider({
   params: z.object({}),
   cacheKey: () => "all",
   async fetch() {
-    const raw = await fetchJson("https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP?eventtypes=EQ,TC,FL,VO,DR,WF", { timeoutMs: 20_000 });
+    const raw = await fetchJson("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF", { timeoutMs: 20_000 });
     const parsed = z.object({ features: z.array(z.unknown()) }).parse(raw);
     const features = parsed.features.flatMap((f) => {
       const r = GdacsFeature.safeParse(f);
@@ -430,5 +430,71 @@ export const dwdProvider = defineProvider({
   async fetch() {
     const { time, events } = parseDwd(await fetchText("https://www.dwd.de/DWD/warnungen/warnapp/json/warnings.json", { timeoutMs: 20_000 }));
     return { data: events, sourceUpdatedAt: new Date(time).toISOString() };
+  },
+});
+
+/* ------------------------------------------------------------------ USGS HANS (U.S. volcanoes) */
+
+const HansVolcano = z.object({
+  obs_fullname: z.string(),
+  volcano_name: z.string(),
+  vnum: z.string(),
+  sent_unixtime: z.number(),
+  color_code: z.string(),
+  alert_level: z.string(),
+  notice_url: z.string().optional(),
+});
+
+const VNUM_COORDS_URL = "https://volcanoes.usgs.gov/vsc/api/volcanoApi/geojson";
+
+export const hansProvider = defineProvider({
+  id: "volcanoes-us",
+  label: "USGS Volcano Hazards Program – elevated U.S. volcanoes",
+  category: "volcano",
+  refreshSeconds: 1800,
+  freshnessClass: "periodic",
+  attribution: { name: "USGS Volcano Hazards Program (HANS)", url: "https://volcanoes.usgs.gov", license: "Public domain (U.S. Government)" },
+  rateLimit: "No key.",
+  note: "Official aviation colour code / alert level for U.S. volcanoes above normal.",
+  params: z.object({}),
+  cacheKey: () => "elevated",
+  async fetch() {
+    const [elevatedRaw, monitoredRaw] = await Promise.all([
+      fetchJson("https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes", { timeoutMs: 20_000 }),
+      fetchJson(VNUM_COORDS_URL, { timeoutMs: 20_000 }).catch(() => ({ features: [] })),
+    ]);
+    const coords = new Map<string, { lat: number; lon: number }>();
+    const geo = z
+      .object({ features: z.array(z.object({ geometry: z.object({ coordinates: z.array(z.number()) }), properties: z.object({ vnum: z.string() }) })) })
+      .catch({ features: [] })
+      .parse(monitoredRaw);
+    for (const f of geo.features) coords.set(f.properties.vnum, { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] });
+    const sev: Record<string, Severity> = { GREEN: 0, YELLOW: 1, ORANGE: 3, RED: 4 };
+    const data: AtlasEvent[] = z
+      .array(z.unknown())
+      .parse(elevatedRaw)
+      .flatMap((r) => {
+        const v = HansVolcano.safeParse(r);
+        if (!v.success) return [];
+        const d = v.data;
+        const pt = coords.get(d.vnum);
+        return [
+          {
+            id: `hans:${d.vnum}`,
+            category: "volcano" as const,
+            title: d.volcano_name,
+            description: `${d.alert_level} / ${d.color_code} – ${d.obs_fullname}`,
+            locationName: "USA",
+            countryCode: "US",
+            point: pt ? { ...pt, precision: "exact" as const } : undefined,
+            source: { name: d.obs_fullname, url: "https://volcanoes.usgs.gov" },
+            time: new Date(d.sent_unixtime * 1000).toISOString(),
+            severity: sev[d.color_code] ?? 1,
+            url: safeUrl(d.notice_url) ?? "https://volcanoes.usgs.gov/hans-public/",
+            meta: { alertLevel: d.alert_level, colorCode: d.color_code },
+          },
+        ];
+      });
+    return { data, sourceUpdatedAt: data.reduce((m, e) => (e.time > m ? e.time : m), "") || null };
   },
 });

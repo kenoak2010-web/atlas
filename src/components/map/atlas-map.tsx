@@ -214,12 +214,14 @@ export default function AtlasMap({ data, visible, dark, interactive = true, init
   const lookup = useRef(new Map<string, Selection>());
   const select = useSelection((s) => s.select);
   const viewCb = useRef(onViewChange);
-  viewCb.current = onViewChange;
   const fallbackCb = useRef(onBasemapFallback);
   const darkRef = useRef(dark);
-  darkRef.current = dark;
   const offline = useRef(false);
-  fallbackCb.current = onBasemapFallback;
+  useEffect(() => {
+    viewCb.current = onViewChange;
+    fallbackCb.current = onBasemapFallback;
+    darkRef.current = dark;
+  });
 
   // Create map once.
   useEffect(() => {

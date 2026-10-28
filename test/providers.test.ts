@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { UsgsFeed, normalizeUsgs, magnitudeSeverity } from "@/server/providers/usgs";
 import { parseDwd, parseFirmsCsv, parseGvpRss, normalizeNws, normalizeEonet, normalizeGdacs } from "@/server/providers/hazards";
 import { parseKp, parseSwpcAlerts, swpcDate } from "@/server/providers/space";
-import { crossRates, parseStooq } from "@/server/providers/markets";
+import { crossRates, parseFredCsv, fredQuote, FRED_SERIES } from "@/server/providers/markets";
 import { normalizeStates, snapBbox } from "@/server/providers/aviation";
 import { parseGdeltDate } from "@/server/providers/news";
 import { representativePoint } from "@/server/providers/geo";
@@ -119,10 +119,13 @@ describe("Markets", () => {
     expect(r["GBP/USD"]).toBeCloseTo(1.2941, 3);
     expect(r["USD/JPY"]).toBeCloseTo(150, 3);
   });
-  it("parses Stooq CSV and skips N/D rows", () => {
-    const q = parseStooq("Symbol,Date,Time,Open,High,Low,Close\n^SPX,2026-10-27,22:00:00,5000,5100,4990,5050\n^DAX,N/D,N/D,N/D,N/D,N/D,N/D\n");
-    expect(q).toHaveLength(1);
-    expect(q[0]).toMatchObject({ id: "spx", price: 5050, changePct: 1 });
+  it("parses FRED CSV, skipping missing values", () => {
+    const rows = parseFredCsv("observation_date,SP500\n2026-10-22,7600\n2026-10-23,.\n2026-10-26,7676\n");
+    expect(rows).toEqual([{ t: "2026-10-22", v: 7600 }, { t: "2026-10-26", v: 7676 }]);
+    const q = fredQuote(FRED_SERIES[0], rows)!;
+    expect(q.price).toBe(7676);
+    expect(q.changePct).toBeCloseTo(1, 1);
+    expect(q.asOf.startsWith("2026-10-26")).toBe(true);
   });
 });
 

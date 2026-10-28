@@ -9,6 +9,7 @@ import type { CityWeather } from "@/server/providers/openmeteo";
 import type { Aircraft } from "@/server/providers/aviation";
 import type { FirePoint } from "@/server/providers/hazards";
 import type { LayerData, MapFeature } from "./atlas-map";
+import { useNow } from "../ui";
 
 export interface MapFilters {
   minMag: "significant" | "4.5" | "2.5" | "1.0" | "all";
@@ -27,9 +28,8 @@ const eventFeature = (e: AtlasEvent, extra: Record<string, string | number | boo
 const notNull = <T,>(x: T | null): x is T => x !== null;
 
 export function useMapData(visible: MapLayerId[], f: MapFilters) {
+  const now = useNow(60_000);
   const on = (l: MapLayerId) => visible.includes(l);
-  const now = Date.now();
-  const fresh = (iso: string) => now - Date.parse(iso) <= f.maxAgeH * 3600_000;
 
   const news = useProvider<NewsPayload>("news", undefined, { enabled: on("news") });
   const quakes = useProvider<AtlasEvent[]>("earthquakes", { minMag: f.minMag, range: f.range }, { enabled: on("quakes") });
@@ -37,6 +37,7 @@ export function useMapData(visible: MapLayerId[], f: MapFilters) {
   const eonet = useProvider<AtlasEvent[]>("eonet", undefined, { enabled: on("wildfires") || on("volcanoes") || on("disasters") });
   const firms = useProvider<FirePoint[]>("firms", { bbox: "-180,-90,180,90" }, { enabled: on("wildfires") });
   const gvp = useProvider<AtlasEvent[]>("volcanoes", undefined, { enabled: on("volcanoes") });
+  const hans = useProvider<AtlasEvent[]>("volcanoes-us", undefined, { enabled: on("volcanoes") });
   const weather = useProvider<CityWeather[]>("world-weather", undefined, { enabled: on("weather") });
   const alerts = useProvider<AtlasEvent[]>("alerts-us", undefined, { enabled: on("alerts") });
   const relief = useProvider<AtlasEvent[]>("humanitarian", undefined, { enabled: on("humanitarian") });
@@ -46,6 +47,7 @@ export function useMapData(visible: MapLayerId[], f: MapFilters) {
   const aircraft = useProvider<Aircraft[]>("aircraft", { bbox: bboxStr }, { enabled: aircraftEnabled });
 
   const data: LayerData = useMemo(() => {
+    const fresh = (iso: string) => now - Date.parse(iso) <= f.maxAgeH * 3600_000;
     const d: LayerData = {};
     d.news = (news.data?.data?.clusters ?? [])
       .filter((c) => c.point && fresh(c.lastUpdated))
@@ -80,7 +82,7 @@ export function useMapData(visible: MapLayerId[], f: MapFilters) {
         },
       })),
     ];
-    d.volcanoes = [...(gvp.data?.data ?? []), ...[...g, ...eo].filter((e) => e.category === "volcano")].map((e) => eventFeature(e)).filter(notNull);
+    d.volcanoes = [...(gvp.data?.data ?? []), ...(hans.data?.data ?? []), ...[...g, ...eo].filter((e) => e.category === "volcano")].map((e) => eventFeature(e)).filter(notNull);
     d.weather = (weather.data?.data ?? []).map((c) => ({
       id: `wx:${c.name}`,
       lat: c.lat,
@@ -131,15 +133,14 @@ export function useMapData(visible: MapLayerId[], f: MapFilters) {
         ]
       : [];
     return d;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [news.data, quakes.data, gdacs.data, eonet.data, firms.data, gvp.data, weather.data, alerts.data, relief.data, iss.data, aircraft.data, aircraftEnabled, f.maxAgeH]);
+  }, [news.data, quakes.data, gdacs.data, eonet.data, firms.data, gvp.data, hans.data, weather.data, alerts.data, relief.data, iss.data, aircraft.data, aircraftEnabled, f.maxAgeH, now]);
 
   const envs: Partial<Record<MapLayerId, ClientEnvelope<unknown> | undefined>> = {
     news: news.data,
     quakes: quakes.data,
     disasters: gdacs.data,
     wildfires: firms.data ?? eonet.data,
-    volcanoes: gvp.data,
+    volcanoes: hans.data ?? gvp.data,
     weather: weather.data,
     alerts: alerts.data,
     humanitarian: relief.data,
