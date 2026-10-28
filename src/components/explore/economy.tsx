@@ -9,7 +9,7 @@ import { formatNumber, formatPct } from "@/lib/format";
 import type { Quote } from "@/server/providers/markets";
 import { useNews, NewsRow } from "../news";
 import { SubPage } from "../sub-page";
-import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, Sparkline, cn, useNow } from "../ui";
+import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, Sparkline, cn, useMounted, useNow } from "../ui";
 
 type Hist = Record<string, { t: string; v: number }[]>;
 
@@ -27,7 +27,7 @@ function QuoteRow({ q, hist }: { q: Quote; hist?: number[] }) {
         <div className="truncate text-[15px] font-medium">{q.label}</div>
         <div className="truncate text-[11px] text-text-3">{q.delayNote} · {q.asOf.slice(0, 10)}</div>
       </div>
-      <div className="w-16">{hist && hist.length > 1 && <Sparkline values={hist} positive={hist.at(-1)! >= hist[0]} />}</div>
+      <div className="w-16">{hist && hist.length > 1 && <Sparkline values={hist} />}</div>
       <div className="w-28 text-right">
         <div className="text-[15px] font-semibold tabular">{formatNumber(q.price, lang, q.group === "fx" ? 4 : 2)}</div>
         <div className={cn("text-[12px] tabular", q.changePct == null ? "text-text-3" : up ? "text-green" : "text-red")}>{formatPct(q.changePct, lang)}</div>
@@ -39,6 +39,7 @@ function QuoteRow({ q, hist }: { q: Quote; hist?: number[] }) {
 export function EconomyScreen() {
   const { t, lang } = useT();
   useNow(60_000);
+  const mounted = useMounted();
   const idx = useProvider<{ quotes: Quote[]; history: Hist }>("markets");
   const crypto = useProvider<Quote[]>("crypto");
   const btc = useProvider<{ t: string; v: number }[]>("crypto-chart", { id: "bitcoin" });
@@ -69,13 +70,13 @@ export function EconomyScreen() {
           <div className="pb-2" />
         </Card>
       )}
-      {section(t("economy.indices"), group("index"), idx.data, idx.isPending, idx.data?.note)}
+      {section(t("economy.indices"), group("index"), idx.data, idx.isPending, t("economy.indicesNote"))}
       {section(t("economy.commodities"), group("commodity"), idx.data, idx.isPending)}
       {section(t("economy.crypto"), group("crypto"), crypto.data, crypto.isPending)}
       {section(t("economy.fx"), group("fx"), fx.data, fx.isPending, fx.data?.note)}
       <Card>
         <CardHeader title={t("economy.hours")} subtitle={lang === "de" ? "Reguläre Handelszeiten, ohne Feiertage" : "Regular sessions, holidays not included"} />
-        <Divided>
+        {mounted && <Divided>
           {EXCHANGES.map((ex) => {
             const open = isOpen(ex);
             return (
@@ -87,7 +88,7 @@ export function EconomyScreen() {
               </div>
             );
           })}
-        </Divided>
+        </Divided>}
         <div className="pb-2" />
       </Card>
       <Card>

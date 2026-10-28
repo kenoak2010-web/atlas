@@ -2,9 +2,11 @@
  * Live TV channel registry. Only official broadcaster sources.
  *
  * mode "youtube": the broadcaster runs its own 24/7 live stream on its official
- * YouTube channel. ATLAS embeds YouTube's player for that channel's current live
- * stream; whether embedding is allowed is decided by the broadcaster per video
- * (YouTube shows a notice if not). The official link is always offered too.
+ * YouTube channel. When the server resolved the current live video id
+ * (youtube-live provider, needs YOUTUBE_API_KEY) ATLAS embeds that video;
+ * otherwise it falls back to YouTube's channel-based live_stream embed.
+ * Embedding permission is decided by the broadcaster per video (YouTube shows a
+ * notice if not). The official link is always offered too.
  *
  * mode "link": no free embeddable stream (geo-restricted, pay-TV, or not on
  * YouTube) → ATLAS only links to the broadcaster's official live page.
@@ -38,16 +40,17 @@ export const CHANNELS: Channel[] = [
   { id: "cnbc", name: "CNBC", lang: "en", country: "US", mode: "link", officialUrl: "https://www.cnbc.com/live-tv/", note: "TV-Anbieter-Login erforderlich / requires TV provider login" },
 ];
 
-export function embedUrl(c: Channel, opts: { autoplay?: boolean; mute?: boolean } = {}): string | null {
+export function embedUrl(c: Channel, opts: { autoplay?: boolean; mute?: boolean; videoId?: string | null } = {}): string | null {
   if (c.mode !== "youtube" || !c.youtubeChannelId) return null;
   const p = new URLSearchParams({
-    channel: c.youtubeChannelId,
     autoplay: opts.autoplay ? "1" : "0",
     mute: opts.mute ? "1" : "0",
     playsinline: "1",
     rel: "0",
     modestbranding: "1",
   });
+  if (opts.videoId && /^[\w-]{11}$/.test(opts.videoId)) return `https://www.youtube.com/embed/${opts.videoId}?${p.toString()}`;
+  p.set("channel", c.youtubeChannelId);
   return `https://www.youtube.com/embed/live_stream?${p.toString()}`;
 }
 

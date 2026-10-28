@@ -3,6 +3,8 @@ import { PROVIDER_BY_ID } from "@/server/registry";
 import { runProvider } from "@/server/runner";
 
 export const dynamic = "force-dynamic";
+// Slow upstreams (GDACS, FRED) use up to 30 s timeouts.
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest, ctx: { params: Promise<{ provider: string }> }) {
   const { provider: id } = await ctx.params;

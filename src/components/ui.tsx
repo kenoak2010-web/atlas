@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ChevronRight, ExternalLink, RefreshCw, X } from "lucide-react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
@@ -11,6 +11,15 @@ import { useOnline } from "@/lib/api";
 
 export function cn(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
+}
+
+/** false during SSR/hydration, true afterwards – for values that depend on the client clock. */
+export function useMounted(): boolean {
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 }
 
 /** Re-render every `ms` so relative timestamps stay correct. */

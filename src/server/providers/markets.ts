@@ -137,12 +137,12 @@ export { FxLatest };
 /* ------------------------------------------------------------------ Indices & oil (FRED, St. Louis Fed) */
 
 export const FRED_SERIES = [
-  { id: "SP500", label: "S&P 500", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
-  { id: "NASDAQCOM", label: "NASDAQ Composite", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
-  { id: "DJIA", label: "Dow Jones", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close" },
-  { id: "NIKKEI225", label: "Nikkei 225", group: "index", currency: "JPY", note: "Schlusskurs Vortag / previous close" },
-  { id: "DCOILBRENTEU", label: "Brent (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay" },
-  { id: "DCOILWTICO", label: "WTI (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay" },
+  { id: "SP500", label: "S&P 500", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close", closeUtc: "21:00" },
+  { id: "NASDAQCOM", label: "NASDAQ Composite", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close", closeUtc: "21:00" },
+  { id: "DJIA", label: "Dow Jones", group: "index", currency: "USD", note: "Schlusskurs Vortag / previous close", closeUtc: "21:00" },
+  { id: "NIKKEI225", label: "Nikkei 225", group: "index", currency: "JPY", note: "Letzter Schlusskurs / last close", closeUtc: "06:00" },
+  { id: "DCOILBRENTEU", label: "Brent (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay", closeUtc: "19:30" },
+  { id: "DCOILWTICO", label: "WTI (Spot)", group: "commodity", currency: "USD", note: "EIA, ~1 Woche verzögert / ~1 week delay", closeUtc: "19:30" },
 ] as const;
 
 /** Parse fredgraph.csv (header "observation_date,<ID>"; missing values are "." or empty). */
@@ -168,7 +168,8 @@ export function fredQuote(def: (typeof FRED_SERIES)[number], rows: { t: string; 
     currency: def.currency,
     changePct: prev ? ((last.v - prev.v) / prev.v) * 100 : null,
     changeBasis: "vs. previous close",
-    asOf: `${last.t}T21:00:00.000Z`,
+    // FRED gives dates only; approximate the session close (UTC), never later than now.
+    asOf: new Date(Math.min(Date.parse(`${last.t}T${def.closeUtc}:00.000Z`), Date.now())).toISOString(),
     delayNote: def.note,
   };
 }

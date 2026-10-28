@@ -48,8 +48,21 @@ async function doFetch(url: string, opts: FetchOptions): Promise<Response> {
   }
 }
 
+/** One quick retry for transient network failures (not for HTTP errors or rate limits). */
+async function fetchWithRetry(url: string, opts: FetchOptions): Promise<Response> {
+  try {
+    return await doFetch(url, opts);
+  } catch (err) {
+    if (err instanceof UpstreamError && err.status === undefined && !opts.signal?.aborted) {
+      await new Promise((r) => setTimeout(r, 600));
+      return doFetch(url, opts);
+    }
+    throw err;
+  }
+}
+
 export async function fetchJson(url: string, opts: FetchOptions = {}): Promise<unknown> {
-  const res = await doFetch(url, { ...opts, headers: { Accept: "application/json", ...opts.headers } });
+  const res = await fetchWithRetry(url, { ...opts, headers: { Accept: "application/json", ...opts.headers } });
   const text = await res.text();
   try {
     return JSON.parse(text);
@@ -59,6 +72,6 @@ export async function fetchJson(url: string, opts: FetchOptions = {}): Promise<u
 }
 
 export async function fetchText(url: string, opts: FetchOptions = {}): Promise<string> {
-  const res = await doFetch(url, opts);
+  const res = await fetchWithRetry(url, opts);
   return res.text();
 }

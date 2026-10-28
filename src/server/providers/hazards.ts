@@ -79,7 +79,7 @@ export const gdacsProvider = defineProvider({
   params: z.object({}),
   cacheKey: () => "all",
   async fetch() {
-    const raw = await fetchJson("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF", { timeoutMs: 20_000 });
+    const raw = await fetchJson("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF", { timeoutMs: 30_000 });
     const parsed = z.object({ features: z.array(z.unknown()) }).parse(raw);
     const features = parsed.features.flatMap((f) => {
       const r = GdacsFeature.safeParse(f);

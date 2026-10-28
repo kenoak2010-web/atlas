@@ -78,7 +78,8 @@ export function clusterArticles(input: Article[], now = Date.now(), interests?: 
     const severity = newsSeverity(text, topics);
     const ageMin = (now - Date.parse(lastUpdated)) / 60_000;
     const urgent = group.some((a) => hasUrgencyMarker(a.title));
-    const breaking = (ageMin <= 120 && sources.size >= 3) || (urgent && ageMin <= 60);
+    // "Breaking" needs fresh, independently confirmed AND serious news – or an explicit urgency marker.
+    const breaking = (ageMin <= 90 && sources.size >= 3 && severity >= 2) || (urgent && ageMin <= 60 && sources.size >= 2);
 
     const cluster: NewsCluster = {
       id: `news:${lead.id}`,

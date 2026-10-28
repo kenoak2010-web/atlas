@@ -59,8 +59,11 @@ describe("duplicate detection", () => {
   it("does not mark single-source stories as breaking without urgency marker", () => {
     const [c] = clusterArticles([art("Minister resigns after scandal", "BBC", 5)], NOW);
     expect(c.breaking).toBe(false);
+    // An urgency marker from a single outlet is not enough – it needs a second source.
     const [u] = clusterArticles([art("BREAKING: Minister resigns after scandal", "BBC", 5)], NOW);
-    expect(u.breaking).toBe(true);
+    expect(u.breaking).toBe(false);
+    const [u2] = clusterArticles([art("BREAKING: Minister resigns after scandal", "BBC", 5), art("Minister resigns after scandal erupts", "DW", 8)], NOW);
+    expect(u2.breaking).toBe(true);
   });
 
   it("removes exact URL duplicates", () => {

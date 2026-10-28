@@ -3,23 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Play, Star, Volume2, VolumeX, X } from "lucide-react";
 import { CHANNELS, embedUrl, youtubeLiveUrl, type Channel } from "@/lib/channels";
+import type { LiveVideo } from "@/server/providers/youtube";
+import { useProvider } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { usePrefs } from "@/lib/store";
 import { TopActions } from "./top-bar";
 import { Card, Chip, ChipRow, PageHeader, cn } from "./ui";
 
-function Player({ c, onClose }: { c: Channel; onClose: () => void }) {
+type LiveMap = Record<string, LiveVideo>;
+
+function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: () => void }) {
   const { t } = useT();
   const frame = useRef<HTMLIFrameElement>(null);
   const [muted, setMuted] = useState(false);
-  const src = embedUrl(c, { autoplay: true })!;
+  const src = embedUrl(c, { autoplay: true, videoId: live?.videoId })!;
   const cmd = (func: string) => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "https://www.youtube.com");
   return (
     <Card className="mb-3">
       <div className="relative aspect-video w-full bg-black">
         <iframe
           ref={frame}
-          key={c.id}
+          key={`${c.id}:${live?.videoId ?? "channel"}`}
           src={`${src}&enablejsapi=1&origin=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`}
           title={`${c.name} live`}
           className="absolute inset-0 h-full w-full"
@@ -31,7 +35,13 @@ function Player({ c, onClose }: { c: Channel; onClose: () => void }) {
       <div className="flex items-center gap-2 px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-semibold">{c.name}</div>
-          <div className="text-[11px] text-text-2">{t("tv.embed")} · {t("tv.notLiveHint")}</div>
+          {live ? (
+            <div className="line-clamp-2 text-[11px] text-text-2">
+              <span className="font-semibold text-red">● LIVE</span> · {live.title}
+            </div>
+          ) : (
+            <div className="text-[11px] text-text-2">{t("tv.embed")} · {t("tv.notLiveHint")}</div>
+          )}
         </div>
         <button
           onClick={() => {
@@ -68,6 +78,10 @@ export function TvScreen() {
   const [active, setActive] = useState<Channel | null>(null);
   const [lang, setLang] = useState<string | null>(null);
   const [onlyFav, setOnlyFav] = useState(false);
+  const resolved = useProvider<LiveMap>("youtube-live");
+  const liveMap: LiveMap = resolved.data?.data ?? {};
+  const liveOf = (c: Channel) => (c.youtubeChannelId ? liveMap[c.youtubeChannelId] : undefined);
+  const resolverActive = !!resolved.data?.data;
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("c");
@@ -82,7 +96,7 @@ export function TvScreen() {
     <div className="page">
       <PageHeader title={t("tv.title")} subtitle={t("tv.note")} action={<TopActions />} />
       <div className="px-4">
-        {active && <Player c={active} onClose={() => setActive(null)} />}
+        {active && <Player c={active} live={liveOf(active)} onClose={() => setActive(null)} />}
         <ChipRow className="mb-2">
           <Chip active={onlyFav} onClick={() => setOnlyFav(!onlyFav)}><Star size={13} /> {t("tv.favorites")}</Chip>
           <Chip active={!lang} onClick={() => setLang(null)}>{t("common.all")}</Chip>
@@ -104,7 +118,9 @@ export function TvScreen() {
                     <Star size={18} fill={fav ? "currentColor" : "none"} />
                   </button>
                 </div>
-                <div className="text-[11px] text-text-3">{c.mode === "youtube" ? t("tv.embed") : (c.note ?? t("tv.linkOnly"))}</div>
+                <div className="text-[11px] text-text-3">
+                  {c.mode !== "youtube" ? (c.note ?? t("tv.linkOnly")) : liveOf(c) ? <span className="font-semibold text-red">● LIVE</span> : resolverActive ? t("tv.noLiveFound") : t("tv.embed")}
+                </div>
                 {c.mode === "youtube" ? (
                   <button
                     onClick={() => {
