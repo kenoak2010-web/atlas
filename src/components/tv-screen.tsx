@@ -8,7 +8,7 @@ import { useProvider } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { usePrefs } from "@/lib/store";
 import { TopActions } from "./top-bar";
-import { Card, Chip, ChipRow, PageHeader, cn } from "./ui";
+import { Card, Chip, ChipRow, LiveBadge, PageHeader, cn } from "./ui";
 
 type LiveMap = Record<string, LiveVideo>;
 
@@ -22,14 +22,18 @@ function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: (
   const src = embedUrl(c, { autoplay: true, videoId: live?.videoId })!;
   const cmd = (func: string) => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "https://www.youtube.com");
   return (
-    <Card className="mb-3">
+    <Card className="expand-in glow mb-3 overflow-hidden">
       <div className="relative aspect-video w-full bg-black">
+        <div className="pointer-events-none absolute inset-0 grid place-items-center text-white/40" aria-hidden>
+          <Play size={34} className="breathe" fill="currentColor" />
+        </div>
         <iframe
           ref={frame}
           key={`${c.id}:${live?.videoId ?? "channel"}`}
           src={`${src}&enablejsapi=1&origin=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`}
           title={`${c.name} live`}
           className="absolute inset-0 h-full w-full"
+          loading="eager"
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
@@ -39,8 +43,9 @@ function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: (
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-semibold">{c.name}</div>
           {live ? (
-            <div className="line-clamp-2 text-[11px] text-text-2">
-              <span className="font-semibold text-red">● LIVE</span> · {live.title}
+            <div className="mt-0.5 flex items-start gap-1.5 text-[11px] text-text-2">
+              <LiveBadge className="shrink-0" />
+              <span className="line-clamp-2">{live.title}</span>
             </div>
           ) : (
             <div className="text-[11px] text-text-2">{t("tv.embed")} · {t("tv.notLiveHint")}</div>
@@ -51,21 +56,21 @@ function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: (
             cmd(muted ? "unMute" : "mute");
             setMuted(!muted);
           }}
-          className="grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-accent"
+          className="press grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-accent"
           aria-label={muted ? "Unmute" : "Mute"}
         >
           {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
-        <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-text-2" aria-label={t("common.close")}>
+        <button onClick={onClose} className="press grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-text-2" aria-label={t("common.close")}>
           <X size={18} />
         </button>
       </div>
       <div className="flex gap-2 px-4 pb-4">
-        <a href={c.officialUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-[14px] font-medium text-accent">
+        <a href={c.officialUrl} target="_blank" rel="noopener noreferrer" className="press inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-[14px] font-medium text-accent">
           {t("tv.official")} <ExternalLink size={14} />
         </a>
         {youtubeLiveUrl(c) && (
-          <a href={youtubeLiveUrl(c)!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-[14px] font-medium text-accent">
+          <a href={youtubeLiveUrl(c)!} target="_blank" rel="noopener noreferrer" className="press inline-flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-[14px] font-medium text-accent">
             YouTube <ExternalLink size={14} />
           </a>
         )}
@@ -75,7 +80,7 @@ function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: (
 }
 
 export function TvScreen() {
-  const { t } = useT();
+  const { t, lang: uiLang } = useT();
   const favs = usePrefs((s) => s.favoriteChannels);
   const toggle = usePrefs((s) => s.toggleIn);
   const [active, setActive] = useState<Channel | null>(null);
@@ -106,12 +111,12 @@ export function TvScreen() {
           <Chip active={lang === "de"} onClick={() => setLang(lang === "de" ? null : "de")}>Deutsch</Chip>
           <Chip active={lang === "en"} onClick={() => setLang(lang === "en" ? null : "en")}>English</Chip>
         </ChipRow>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="rise grid grid-cols-2 gap-3">
           {list.map((c) => {
             const fav = favs.includes(c.id);
             const playing = active?.id === c.id;
             return (
-              <div key={c.id} className={cn("card flex flex-col justify-between gap-3 p-3", playing && "ring-2 ring-accent glow")}>
+              <div key={c.id} className={cn("card flex flex-col justify-between gap-3 p-3 transition-shadow duration-300", playing && "ring-2 ring-accent glow")}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="mb-2 grid h-9 w-9 place-items-center rounded-xl text-[12px] font-extrabold text-white" style={{ background: `linear-gradient(135deg, hsl(${hue(c.id)} 80% 55%), hsl(${(hue(c.id) + 50) % 360} 80% 45%))` }} aria-hidden>
@@ -120,8 +125,8 @@ export function TvScreen() {
                     <div className="text-[15px] leading-tight font-semibold">{c.name}</div>
                     <div className="mt-0.5 text-[11px] text-text-2 uppercase">{c.lang} · {c.country}</div>
                   </div>
-                  <button onClick={() => toggle("favoriteChannels", c.id)} aria-label={t("tv.favorites")} aria-pressed={fav} className={cn("-m-1 p-1", fav ? "text-yellow" : "text-text-3")}>
-                    <Star size={18} fill={fav ? "currentColor" : "none"} />
+                  <button onClick={() => toggle("favoriteChannels", c.id)} aria-label={t("tv.favorites")} aria-pressed={fav} className={cn("press -m-1 p-1 transition-colors", fav ? "text-yellow" : "text-text-3")}>
+                    <Star key={String(fav)} size={18} fill={fav ? "currentColor" : "none"} className={fav ? "pop" : undefined} />
                   </button>
                 </div>
                 <div className="text-[11px] text-text-3">
@@ -147,7 +152,7 @@ export function TvScreen() {
           })}
         </div>
         <p className="mt-4 text-[12px] text-text-3">
-          {t("tv.notLiveHint")} Picture-in-Picture: über die Steuerung des YouTube-Players, sofern iOS es für den Stream erlaubt.
+          {t("tv.notLiveHint")} {uiLang === "de" ? "Bild-in-Bild: über die Steuerung des YouTube-Players, sofern iOS es für den Stream erlaubt." : "Picture-in-picture: via the YouTube player controls, where iOS allows it for the stream."}
         </p>
       </div>
     </div>

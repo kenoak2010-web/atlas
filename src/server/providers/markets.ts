@@ -13,6 +13,9 @@ export interface Quote {
   changeBasis: string;
   asOf: string;
   delayNote: string;
+  /** Optional 7-day price series (hourly), oldest first */
+  spark?: number[];
+  marketCap?: number | null;
 }
 
 /* ------------------------------------------------------------------ Crypto (CoinGecko) */
@@ -20,6 +23,11 @@ export interface Quote {
 const COINS = [
   { id: "bitcoin", label: "Bitcoin" },
   { id: "ethereum", label: "Ethereum" },
+  { id: "solana", label: "Solana" },
+  { id: "ripple", label: "XRP" },
+  { id: "binancecoin", label: "BNB" },
+  { id: "cardano", label: "Cardano" },
+  { id: "dogecoin", label: "Dogecoin" },
 ];
 
 export const cryptoProvider = defineProvider({
@@ -35,24 +43,76 @@ export const cryptoProvider = defineProvider({
   cacheKey: () => "spot",
   async fetch(_p, ctx) {
     const key = ctx.env.COINGECKO_DEMO_KEY;
-    const raw = await fetchJson(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${COINS.map((c) => c.id).join(",")}&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true`,
-      { headers: key ? { "x-cg-demo-api-key": key } : {} },
-    );
-    const rows = z.record(z.string(), z.object({ usd: z.number(), usd_24h_change: z.number().nullable().optional(), last_updated_at: z.number() })).parse(raw);
-    const data: Quote[] = COINS.filter((c) => rows[c.id]).map((c) => ({
-      id: c.id,
-      label: c.label,
-      group: "crypto",
-      price: rows[c.id].usd,
-      currency: "USD",
-      changePct: rows[c.id].usd_24h_change ?? null,
-      changeBasis: "24h",
-      asOf: new Date(rows[c.id].last_updated_at * 1000).toISOString(),
-      delayNote: "~1–2 min",
-    }));
+    const raw = await fetchJson(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${COINS.map((c) => c.id).join(",")}&sparkline=true&price_change_percentage=24h`, {
+      headers: key ? { "x-cg-demo-api-key": key } : {},
+    });
+    const rows = z
+      .array(
+        z.object({
+          id: z.string(),
+          current_price: z.number(),
+          market_cap: z.number().nullable().optional(),
+          price_change_percentage_24h: z.number().nullable().optional(),
+          last_updated: z.string(),
+          sparkline_in_7d: z.object({ price: z.array(z.number()) }).nullable().optional(),
+        }),
+      )
+      .parse(raw);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const data: Quote[] = COINS.filter((c) => byId.has(c.id)).map((c) => {
+      const r = byId.get(c.id)!;
+      const spark = r.sparkline_in_7d?.price ?? [];
+      return {
+        id: c.id,
+        label: c.label,
+        group: "crypto",
+        price: r.current_price,
+        currency: "USD",
+        changePct: r.price_change_percentage_24h ?? null,
+        changeBasis: "24h",
+        asOf: new Date(r.last_updated).toISOString(),
+        delayNote: "~1–2 min",
+        // Thin the hourly series to keep the payload small.
+        spark: spark.filter((_, i) => i % 3 === 0 || i === spark.length - 1),
+        marketCap: r.market_cap ?? null,
+      };
+    });
     const newest = data.reduce((m, d) => (d.asOf > m ? d.asOf : m), "");
     return { data, sourceUpdatedAt: newest || null };
+  },
+});
+
+/* ------------------------------------------------------------------ Crypto Fear & Greed (alternative.me) */
+
+export interface FearGreed {
+  value: number;
+  label: string;
+  time: string;
+  history: { t: string; v: number }[];
+}
+
+export const fearGreedProvider = defineProvider({
+  id: "fear-greed",
+  label: "alternative.me – Crypto Fear & Greed Index",
+  category: "market",
+  refreshSeconds: 3600,
+  freshnessClass: "delayed",
+  attribution: { name: "Alternative.me", url: "https://alternative.me/crypto/fear-and-greed-index/", license: "Free API; attribution required" },
+  rateLimit: "60 requests/min per IP (documented).",
+  note: "Daily sentiment index 0–100 for the crypto market, updated once a day.",
+  params: z.object({}),
+  cacheKey: () => "fng30",
+  async fetch() {
+    const raw = await fetchJson("https://api.alternative.me/fng/?limit=30");
+    const rows = z.object({ data: z.array(z.object({ value: z.string(), value_classification: z.string(), timestamp: z.string() })).min(1) }).parse(raw).data;
+    const iso = (ts: string) => new Date(Number(ts) * 1000).toISOString();
+    const data: FearGreed = {
+      value: Number(rows[0].value),
+      label: rows[0].value_classification,
+      time: iso(rows[0].timestamp),
+      history: rows.map((r) => ({ t: iso(r.timestamp), v: Number(r.value) })).reverse(),
+    };
+    return { data, sourceUpdatedAt: data.time };
   },
 });
 

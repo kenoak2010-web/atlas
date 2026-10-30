@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ChevronRight, ExternalLink, RefreshCw, X } from "lucide-react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
@@ -204,14 +204,20 @@ export function ErrorState({ message, onRetry, compact }: { message: string; onR
   );
 }
 
-export function Empty({ children }: { children?: ReactNode }) {
+export function Empty({ children, icon }: { children?: ReactNode; icon?: ReactNode }) {
   const { t } = useT();
-  return <div className="px-4 py-6 text-center text-[13px] text-text-2">{children ?? t("common.none")}</div>;
+  return (
+    <div className="fade-in flex flex-col items-center gap-2 px-4 py-7 text-center text-[13px] text-text-2">
+      {icon && <span className="pop grid h-12 w-12 place-items-center rounded-full bg-surface-2 text-text-3">{icon}</span>}
+      <span className="max-w-[280px]">{children ?? t("common.none")}</span>
+    </div>
+  );
 }
 
 const SEV_COLOR: Record<number, string> = { 0: "bg-text-3", 1: "bg-blue", 2: "bg-yellow", 3: "bg-orange", 4: "bg-red" };
-export function SeverityDot({ severity, className }: { severity: Severity | number; className?: string }) {
-  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", SEV_COLOR[severity] ?? "bg-text-3", className)} aria-hidden />;
+const SEV_TEXT: Record<number, string> = { 0: "text-text-3", 1: "text-blue", 2: "text-yellow", 3: "text-orange", 4: "text-red" };
+export function SeverityDot({ severity, className, pulse }: { severity: Severity | number; className?: string; pulse?: boolean }) {
+  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", SEV_COLOR[severity] ?? "bg-text-3", pulse && `ping ${SEV_TEXT[severity] ?? ""}`, className)} aria-hidden />;
 }
 
 export function Chip({ active, onClick, children, className }: { active?: boolean; onClick?: () => void; children: ReactNode; className?: string }) {
@@ -235,16 +241,32 @@ export function ChipRow({ children, className }: { children: ReactNode; classNam
   return <div className={cn("no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 py-1", className)}>{children}</div>;
 }
 
-export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label?: string }) {
+/** Red "LIVE" pill with a pulsing dot. */
+export function LiveBadge({ className, label = "LIVE" }: { className?: string; label?: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-[10px] bg-surface-2 p-0.5">
+    <span className={cn("inline-flex items-center gap-1 rounded-md bg-red px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-[0_0_14px_-2px_var(--color-red)]", className)}>
+      <span className="ping h-1.5 w-1.5 rounded-full bg-white text-white" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+export function Segmented<T extends string>({ value, options, onChange, label, className }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label?: string; className?: string }) {
+  const idx = Math.max(0, options.findIndex((o) => o.value === value));
+  return (
+    <div role="radiogroup" aria-label={label} className={cn("relative grid rounded-[11px] bg-surface-2 p-0.5", className)} style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      <span
+        aria-hidden
+        className="absolute top-0.5 bottom-0.5 left-0.5 rounded-[9px] bg-surface-solid shadow-sm transition-transform duration-300 ease-[var(--ease-spring)] dark:bg-white/15"
+        style={{ width: `calc((100% - 4px) / ${options.length})`, transform: `translateX(${idx * 100}%)` }}
+      />
       {options.map((o) => (
         <button
           key={o.value}
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={cn("min-h-[30px] rounded-[8px] px-3 text-[13px] font-medium transition-all", o.value === value ? "bg-surface-solid text-text shadow-sm dark:bg-white/15" : "text-text-2")}
+          className={cn("relative z-[1] min-h-[32px] truncate rounded-[9px] px-3 text-[13px] font-medium whitespace-nowrap transition-colors", o.value === value ? "text-text" : "text-text-2")}
         >
           {o.label}
         </button>
@@ -379,16 +401,26 @@ export function Divided({ children }: { children: ReactNode }) {
   return <div className="stagger divide-y divide-[var(--separator)]">{children}</div>;
 }
 
-/** Simple dependency-free sparkline (SVG). */
+/** Simple dependency-free sparkline (SVG) with a soft area fill and a draw-in animation. */
 export function Sparkline({ values, className, positive }: { values: number[]; className?: string; positive?: boolean }) {
+  const id = useId().replace(/:/g, "");
   if (values.length < 2) return null;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${30 - ((v - min) / range) * 28 - 1}`).join(" ");
+  const xy = values.map((v, i) => [(i / (values.length - 1)) * 100, 30 - ((v - min) / range) * 28 - 1] as const);
+  const pts = xy.map(([x, y]) => `${x},${y}`).join(" ");
+  const color = positive === undefined ? "var(--accent)" : positive ? "var(--green)" : "var(--red)";
   return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={cn("h-8 w-full", className)} aria-hidden>
-      <polyline points={pts} fill="none" stroke={positive === undefined ? "var(--accent)" : positive ? "var(--green)" : "var(--red)"} strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={cn("h-8 w-full overflow-visible", className)} aria-hidden>
+      <defs>
+        <linearGradient id={`sg${id}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity="0.28" />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={`0,30 ${pts} 100,30`} fill={`url(#sg${id})`} className="fade-in" />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.6" vectorEffect="non-scaling-stroke" pathLength={1} className="draw" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }

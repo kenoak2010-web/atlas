@@ -71,7 +71,7 @@ export function BriefingWidget() {
             );
             const cls = cn("flex gap-2.5 rounded-xl border-l-[3px] bg-surface-2 py-2 pr-3 pl-2.5", SEV_BORDER[l.severity] ?? SEV_BORDER[0]);
             return (
-              <li key={i} className="rise-item">
+              <li key={i} className="rise-item" style={{ animationDelay: `${i * 60}ms` }}>
                 {l.href ? (
                   <a href={l.href} target="_blank" rel="noopener noreferrer" className={cls}>
                     {body}

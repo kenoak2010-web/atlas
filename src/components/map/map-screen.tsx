@@ -90,14 +90,14 @@ export function MapScreen() {
           ))}
         </ChipRow>
         {visible.includes("aircraft") && !aircraftEnabled && (
-          <div className="mx-auto mt-1 w-fit rounded-full bg-black/70 px-3 py-1 text-[12px] text-white">{t("map.zoomForAircraft")}</div>
+          <div className="fade-in mx-auto mt-1 w-fit rounded-full bg-black/70 px-3 py-1 text-[12px] text-white">{t("map.zoomForAircraft")}</div>
         )}
-        {fallback && <div className="mx-auto mt-1 w-fit rounded-full bg-orange/90 px-3 py-1 text-[12px] text-white">{t("map.tilesFallback")}</div>}
+        {fallback && <div className="fade-in mx-auto mt-1 w-fit rounded-full bg-orange/90 px-3 py-1 text-[12px] text-white">{t("map.tilesFallback")}</div>}
       </div>
 
       <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+84px)] flex flex-col gap-2">
         {loading && (
-          <div className="grid h-11 w-11 place-items-center card rounded-full" aria-label={t("common.loading")}>
+          <div className="pop grid h-11 w-11 place-items-center card rounded-full" aria-label={t("common.loading")}>
             <Loader2 size={18} className="animate-spin text-text-2" />
           </div>
         )}
@@ -120,6 +120,7 @@ export function MapScreen() {
           <div>
             <div className="mb-2 text-[13px] font-semibold text-text-2">{t("map.timeRange")}</div>
             <Segmented
+              className="w-full"
               value={String(filters.maxAgeH)}
               options={[
                 { value: "1", label: t("time.1h") },
@@ -136,6 +137,7 @@ export function MapScreen() {
           <div>
             <div className="mb-2 text-[13px] font-semibold text-text-2">{t("map.minMag")}</div>
             <Segmented
+              className="w-full"
               value={filters.minMag}
               options={[
                 { value: "all", label: "≥ 0" },
@@ -150,7 +152,7 @@ export function MapScreen() {
             {MAP_LAYERS.map((l) => (
               <li key={l} className="px-3 py-2.5">
                 <div className="flex items-center gap-3">
-                  <span className="h-3 w-3 rounded-full" style={{ background: LAYER_COLOR[l] }} aria-hidden />
+                  <span className="h-3 w-3 rounded-full transition-shadow duration-300" style={{ background: LAYER_COLOR[l], boxShadow: visible.includes(l) ? `0 0 10px ${LAYER_COLOR[l]}` : undefined }} aria-hidden />
                   <span className="flex-1 text-[15px]">{t(`map.layer.${l}` as TKey)}</span>
                   <Toggle checked={visible.includes(l)} onChange={() => toggle(l)} label={t(`map.layer.${l}` as TKey)} />
                 </div>

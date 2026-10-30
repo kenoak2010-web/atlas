@@ -6,7 +6,7 @@ import { newsProvider, gdeltProvider } from "./providers/news";
 import { gdacsProvider, eonetProvider, firmsProvider, gvpProvider, hansProvider, nwsProvider, dwdProvider } from "./providers/hazards";
 import { openskyProvider } from "./providers/aviation";
 import { issProvider, issTrackProvider, spaceWeatherProvider, launchesProvider } from "./providers/space";
-import { cryptoProvider, cryptoChartProvider, fxProvider, fredProvider } from "./providers/markets";
+import { cryptoProvider, cryptoChartProvider, fearGreedProvider, fxProvider, fredProvider } from "./providers/markets";
 import { reliefwebProvider } from "./providers/humanitarian";
 import { geocodeProvider } from "./providers/geocode";
 import { youtubeLiveProvider } from "./providers/youtube";
@@ -37,6 +37,7 @@ export const PROVIDERS: AnyProvider[] = [
   fredProvider,
   cryptoProvider,
   cryptoChartProvider,
+  fearGreedProvider,
   fxProvider,
   geocodeProvider,
   youtubeLiveProvider,

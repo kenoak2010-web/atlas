@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, Languages, MoonStar, RefreshCw, Trash2 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { MAP_LAYERS, usePrefs, type RefreshMode, type ThemePref } from "@/lib/store";
 import type { Topic } from "@/lib/news/types";
@@ -12,10 +12,13 @@ import { Card, CardHeader, Chip, ChipRow, Divided, Segmented, Toggle } from "./u
 
 const TOPICS: Topic[] = ["politics", "conflict", "economy", "technology", "science", "aviation", "space", "environment", "disaster", "health"];
 
-function Line({ label, children }: { label: string; children: React.ReactNode }) {
+function Line({ label, icon, children, stack }: { label: string; icon?: React.ReactNode; children: React.ReactNode; stack?: boolean }) {
   return (
-    <div className="flex min-h-[48px] items-center justify-between gap-3 px-4 py-2">
-      <span className="text-[15px]">{label}</span>
+    <div className={stack ? "space-y-2 px-4 py-3" : "flex min-h-[50px] items-center justify-between gap-3 px-4 py-2"}>
+      <span className="flex items-center gap-2.5 text-[15px]">
+        {icon && <span className="bg-accent-gradient grid h-7 w-7 shrink-0 place-items-center rounded-lg text-white">{icon}</span>}
+        {label}
+      </span>
       {children}
     </div>
   );
@@ -43,30 +46,31 @@ export function SettingsScreen() {
     <SubPage title={t("settings.title")}>
       <Card>
         <Divided>
-          <Line label={t("settings.language")}>
+          <Line label={t("settings.language")} icon={<Languages size={15} />}>
             <Segmented value={p.lang} onChange={(v) => p.set("lang", v)} options={[{ value: "de", label: "Deutsch" }, { value: "en", label: "English" }]} />
           </Line>
-          <Line label={t("settings.appearance")}>
-            <Segmented<ThemePref> value={p.theme} onChange={(v) => p.set("theme", v)} options={[{ value: "system", label: t("settings.system") }, { value: "light", label: t("settings.light") }, { value: "dark", label: t("settings.dark") }]} />
+          <Line label={t("settings.appearance")} icon={<MoonStar size={15} />} stack>
+            <Segmented<ThemePref> className="w-full" value={p.theme} onChange={(v) => p.set("theme", v)} options={[{ value: "system", label: t("settings.system") }, { value: "light", label: t("settings.light") }, { value: "dark", label: t("settings.dark") }]} />
           </Line>
-          <Line label={t("settings.refresh")}>
-            <Segmented<RefreshMode> value={p.refresh} onChange={(v) => p.set("refresh", v)} options={[{ value: "normal", label: t("settings.refresh.normal") }, { value: "saver", label: t("settings.refresh.saver") }, { value: "manual", label: t("settings.refresh.manual") }]} />
+          <Line label={t("settings.refresh")} icon={<RefreshCw size={15} />} stack>
+            <Segmented<RefreshMode> className="w-full" value={p.refresh} onChange={(v) => p.set("refresh", v)} options={[{ value: "normal", label: t("settings.refresh.normal") }, { value: "saver", label: t("settings.refresh.saver") }, { value: "manual", label: t("settings.refresh.manual") }]} />
           </Line>
         </Divided>
       </Card>
 
       <Card>
         <div id="widgets" className="scroll-mt-4" />
-        <CardHeader title={t("settings.widgets")} />
+        <CardHeader title={t("settings.widgets")} subtitle={lang === "de" ? `${p.widgetOrder.length - p.hiddenWidgets.length} von ${p.widgetOrder.length} sichtbar` : `${p.widgetOrder.length - p.hiddenWidgets.length} of ${p.widgetOrder.length} visible`} />
         <Divided>
           {p.widgetOrder.map((w, i) => {
             const hidden = p.hiddenWidgets.includes(w);
             return (
-              <div key={w} className="flex min-h-[48px] items-center gap-2 px-4">
-                <span className={`flex-1 text-[15px] ${hidden ? "text-text-3" : ""}`}>{t(`widget.${w}` as TKey)}</span>
-                <button onClick={() => p.moveWidget(w, -1)} disabled={i === 0} className="grid h-9 w-9 place-items-center text-accent disabled:text-text-3" aria-label="Nach oben"><ArrowUp size={17} /></button>
-                <button onClick={() => p.moveWidget(w, 1)} disabled={i === p.widgetOrder.length - 1} className="grid h-9 w-9 place-items-center text-accent disabled:text-text-3" aria-label="Nach unten"><ArrowDown size={17} /></button>
-                <button onClick={() => p.toggleIn("hiddenWidgets", w)} className="grid h-9 w-9 place-items-center text-text-2" aria-label={hidden ? "Anzeigen" : "Ausblenden"}>{hidden ? <EyeOff size={17} /> : <Eye size={17} />}</button>
+              <div key={w} className="flex min-h-[50px] items-center gap-1 pr-2 pl-4 transition-opacity duration-300" style={{ opacity: hidden ? 0.55 : 1 }}>
+                <span className="w-6 text-[12px] font-bold text-text-3 tabular">{i + 1}</span>
+                <span className={`min-w-0 flex-1 truncate text-[15px] ${hidden ? "text-text-3 line-through decoration-text-3/50" : ""}`}>{t(`widget.${w}` as TKey)}</span>
+                <button onClick={() => p.moveWidget(w, -1)} disabled={i === 0} className="press grid h-9 w-9 place-items-center rounded-full text-accent disabled:opacity-30" aria-label={lang === "de" ? "Nach oben" : "Move up"}><ArrowUp size={17} /></button>
+                <button onClick={() => p.moveWidget(w, 1)} disabled={i === p.widgetOrder.length - 1} className="press grid h-9 w-9 place-items-center rounded-full text-accent disabled:opacity-30" aria-label={lang === "de" ? "Nach unten" : "Move down"}><ArrowDown size={17} /></button>
+                <button onClick={() => p.toggleIn("hiddenWidgets", w)} className={`press grid h-9 w-9 place-items-center rounded-full ${hidden ? "text-text-3" : "bg-accent/12 text-accent"}`} aria-label={hidden ? (lang === "de" ? "Anzeigen" : "Show") : (lang === "de" ? "Ausblenden" : "Hide")} aria-pressed={!hidden}>{hidden ? <EyeOff size={17} /> : <Eye size={17} />}</button>
               </div>
             );
           })}

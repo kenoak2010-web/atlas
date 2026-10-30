@@ -22,3 +22,13 @@ export function isOpen(ex: (typeof EXCHANGES)[number], d = new Date()): boolean 
 export function localTime(tz: string, d = new Date()): string {
   return d.toLocaleTimeString("de-DE", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
 }
+
+/** Progress (0–1) through the current trading session, or null when closed. */
+export function sessionProgress(ex: (typeof EXCHANGES)[number], d = new Date()): number | null {
+  const { weekday, minutes } = localParts(d, ex.tz);
+  if (weekday === "Sat" || weekday === "Sun") return null;
+  const first = ex.sessions[0][0];
+  const last = ex.sessions[ex.sessions.length - 1][1];
+  if (!ex.sessions.some(([a, b]) => minutes >= a && minutes < b)) return null;
+  return (minutes - first) / (last - first);
+}
