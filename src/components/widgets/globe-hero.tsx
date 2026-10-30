@@ -12,7 +12,7 @@ import { useT } from "@/lib/i18n";
 import type { AtlasEvent } from "@/lib/types";
 import { useDark } from "@/lib/use-dark";
 import { useNews } from "../news";
-import { cn, useNow } from "../ui";
+import { AnimatedNumber, cn, useNow } from "../ui";
 
 if (typeof window !== "undefined") maplibregl.setWorkerUrl(`${window.location.origin}/maplibre/maplibre-gl-worker.mjs`);
 
@@ -171,7 +171,7 @@ export function GlobeHero() {
           <li key={l.label} className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
             <span className={cn("h-2 w-2 rounded-full", l.color)} aria-hidden />
             {l.label}
-            {l.n != null && <span className="font-bold tabular">{l.n}</span>}
+            {l.n != null && <AnimatedNumber value={l.n} className="font-bold" />}
           </li>
         ))}
       </ul>

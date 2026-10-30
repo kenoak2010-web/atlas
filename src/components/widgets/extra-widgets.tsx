@@ -11,7 +11,7 @@ import type { AirQuality, EpicImage, HistoryEvent } from "@/server/providers/ext
 import type { SpaceWeather } from "@/server/providers/space";
 import { useNews } from "../news";
 import { useSelection } from "@/lib/selection";
-import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, cn, useMounted, useNow } from "../ui";
+import { AnimatedNumber, Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, cn, useMounted, useNow } from "../ui";
 import { useWeatherLocation } from "./weather";
 
 const de = (lang: string) => lang === "de";
@@ -149,7 +149,7 @@ export function ActivityWidget() {
         <div className="relative shrink-0">
           <Gauge value={ready ? idx.value : 0} />
           <div className="absolute inset-x-0 bottom-0 text-center">
-            <div className="text-[30px] leading-none font-bold tracking-tight tabular">{ready ? idx.value : "–"}</div>
+            <AnimatedNumber value={ready ? idx.value : null} className="text-[30px] leading-none font-bold tracking-tight" />
           </div>
         </div>
         <div className="min-w-0">
@@ -183,7 +183,7 @@ export function ActivityWidget() {
           { n: dwd.data?.data || nws.data?.data ? (dwd.data?.data ?? []).filter((e) => e.severity >= 3).length + (nws.data?.data ?? []).length : undefined, l: de(lang) ? "Unwetter" : "Severe wx" },
         ].map((s) => (
           <div key={s.l} className="rounded-2xl bg-surface-2 py-2">
-            <div className="text-[18px] font-bold tabular">{s.n ?? "–"}</div>
+            <AnimatedNumber value={s.n} className="block text-[18px] font-bold" />
             <div className="truncate text-[10px] text-text-2">{s.l}</div>
           </div>
         ))}

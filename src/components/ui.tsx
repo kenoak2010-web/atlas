@@ -32,6 +32,63 @@ export function useNow(ms = 30_000): number {
   return now;
 }
 
+/** Number that counts up/down smoothly to its new value. */
+export function AnimatedNumber({ value, decimals = 0, className, duration = 900 }: { value: number | null | undefined; decimals?: number; className?: string; duration?: number }) {
+  const [shown, setShown] = useState<number | null>(value ?? null);
+  const from = useRef<number>(0);
+  useEffect(() => {
+    if (value == null) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = performance.now();
+    const a = from.current;
+    let raf = 0;
+    const step = (t: number) => {
+      const k = reduce ? 1 : Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - k, 3);
+      const v = a + (value - a) * eased;
+      setShown(v);
+      if (k < 1) raf = requestAnimationFrame(step);
+      else from.current = value;
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      from.current = value;
+    };
+  }, [value, duration]);
+  if (value == null) return <span className={className}>–</span>;
+  return <span className={cn("tabular", className)}>{(shown ?? value).toFixed(decimals)}</span>;
+}
+
+/** true once the page is scrolled past `px` (for compact headers). */
+export function useScrolled(px = 48): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > px);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, [px]);
+  return scrolled;
+}
+
+/** Blurred bar with the small page title, shown once the large title scrolls away. */
+export function CompactBar({ title, show }: { title: string; show: boolean }) {
+  return (
+    <div
+      aria-hidden={!show}
+      className={cn(
+        "compact-bar fixed inset-x-0 top-0 z-30 border-b border-[var(--separator)] bg-[var(--tabbar)] pt-safe backdrop-blur-2xl backdrop-saturate-150",
+        show ? "opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+      )}
+    >
+      <div className="mx-auto flex h-11 max-w-[640px] items-center justify-center px-12 text-[16px] font-semibold tracking-tight">
+        <span className="truncate">{title}</span>
+      </div>
+    </div>
+  );
+}
+
 export function RelTime({ iso, className }: { iso: string | null | undefined; className?: string }) {
   const { lang } = useT();
   const now = useNow();
@@ -163,7 +220,7 @@ export function Chip({ active, onClick, children, className }: { active?: boolea
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-full px-3.5 text-[13px] font-medium transition-colors",
+        "press inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-full px-3.5 text-[13px] font-medium transition-all duration-300",
         active ? "bg-accent-gradient text-white shadow-[0_6px_20px_-6px_var(--accent)]" : "border border-[var(--border)] bg-surface text-text backdrop-blur-xl",
         className,
       )}
@@ -204,7 +261,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       onClick={() => onChange(!checked)}
       className={cn("relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors", checked ? "bg-green" : "bg-text-3/40")}
     >
-      <span className={cn("absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow transition-transform", checked ? "translate-x-[22px]" : "translate-x-[2px]")} />
+      <span className={cn("absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow transition-transform duration-300 ease-[var(--ease-spring)]", checked ? "translate-x-[22px]" : "translate-x-[2px]")} />
     </button>
   );
 }
@@ -227,34 +284,59 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   const { t } = useT();
   const startY = useRef<number | null>(null);
   const [dy, setDy] = useState(0);
+  const [closing, setClosing] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const dismiss = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      setDy(0);
+      onClose();
+    }, 210);
+  };
+  const dismissRef = useRef(dismiss);
+  useEffect(() => {
+    dismissRef.current = dismiss;
+  });
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && dismissRef.current();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    // Lock page scroll behind the sheet.
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} aria-label={t("common.close")} />
+      <button className={cn("absolute inset-0 bg-black/50 backdrop-blur-[2px]", closing ? "fade-out" : "fade-in")} onClick={dismiss} aria-label={t("common.close")} />
       <div
-        className="sheet-in relative max-h-[86dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[26px] border-t border-[var(--border)] bg-surface-solid pb-safe shadow-2xl"
-        style={{ transform: dy > 0 ? `translateY(${dy}px)` : undefined }}
+        className={cn(closing ? "sheet-out" : "sheet-in", "relative max-h-[86dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[26px] border-t border-[var(--border)] bg-surface-solid pb-safe shadow-2xl")}
+        style={{ transform: dy > 0 && !closing ? `translateY(${dy}px)` : undefined, transition: !dragging && !closing ? "transform 300ms var(--ease-spring)" : undefined }}
       >
         <div
           className="sticky top-0 z-10 bg-surface-solid/95 px-4 pt-2 pb-2 backdrop-blur"
-          onTouchStart={(e) => (startY.current = e.touches[0].clientY)}
+          onTouchStart={(e) => {
+            startY.current = e.touches[0].clientY;
+            setDragging(true);
+          }}
           onTouchMove={(e) => startY.current != null && setDy(Math.max(0, e.touches[0].clientY - startY.current))}
           onTouchEnd={() => {
-            if (dy > 90) onClose();
-            setDy(0);
+            setDragging(false);
+            if (dy > 90) dismiss();
+            else setDy(0);
             startY.current = null;
           }}
         >
           <div className="mx-auto mb-2 h-[5px] w-9 rounded-full bg-text-3/50" aria-hidden />
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 text-[17px] font-semibold">{title}</div>
-            <button onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-text-2" aria-label={t("common.close")}>
+            <button onClick={dismiss} className="press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-text-2" aria-label={t("common.close")}>
               <X size={16} />
             </button>
           </div>
@@ -266,7 +348,10 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 }
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: ReactNode; action?: ReactNode }) {
+  const scrolled = useScrolled(56);
   return (
+    <>
+    <CompactBar title={title} show={scrolled} />
     <header className="flex items-end justify-between gap-3 px-4 pt-4 pb-3">
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-[0.28em] text-accent uppercase">
@@ -278,6 +363,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
       </div>
       {action}
     </header>
+    </>
   );
 }
 
@@ -289,7 +375,7 @@ export function Row({ children, onClick, href, className }: { children: ReactNod
 }
 
 export function Divided({ children }: { children: ReactNode }) {
-  return <div className="divide-y divide-[var(--separator)]">{children}</div>;
+  return <div className="stagger divide-y divide-[var(--separator)]">{children}</div>;
 }
 
 /** Simple dependency-free sparkline (SVG). */

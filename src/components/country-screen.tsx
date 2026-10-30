@@ -12,7 +12,7 @@ import type { WeatherForecast } from "@/server/providers/openmeteo";
 import { EventRow } from "./events";
 import { useNews, NewsHero, NewsRow } from "./news";
 import { SubPage } from "./sub-page";
-import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton } from "./ui";
+import { AnimatedNumber, Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton } from "./ui";
 import { WeatherSummary } from "./widgets/weather";
 import { useHotspots } from "./widgets/intel-widgets";
 import Link from "next/link";
@@ -95,7 +95,7 @@ function Dossier({ iso }: { iso: string }) {
       <div className="grid grid-cols-4 gap-2">
         {stats.map((s) => (
           <div key={s.l} className="card px-2 py-2.5 text-center">
-            <div className="text-[20px] font-bold tabular">{s.n}</div>
+            <AnimatedNumber value={typeof s.n === "number" ? s.n : null} className="block text-[20px] font-bold" />
             <div className="truncate text-[10px] text-text-2">{s.l}</div>
           </div>
         ))}

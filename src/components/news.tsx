@@ -32,10 +32,15 @@ export function NewsLabel({ c }: { c: NewsCluster }) {
 /** Feed-provided teaser image. Hidden if it fails to load (hotlink protection, offline). */
 export function NewsImage({ src, className }: { src: string | null | undefined; className?: string }) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  // Cached images can finish loading before hydration attaches onLoad.
+  const ref = (el: HTMLImageElement | null) => {
+    if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
+  };
   if (!src || failed) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element -- remote publisher image from the RSS feed
-    <img src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} className={cn("bg-surface-2 object-cover", className)} />
+    <img ref={ref} src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} data-loaded={loaded} className={cn("img-fade bg-surface-2 object-cover", className)} />
   );
 }
 
