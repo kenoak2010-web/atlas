@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { currentPosition } from "@/lib/native";
 import { CloudSun, LocateFixed } from "lucide-react";
 import { useProvider } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -26,15 +27,12 @@ export function useWeatherLocation() {
   const home = places.find((p) => p.id === homeId);
   const loc: WxLocation = geo ?? (home ? { name: home.name, lat: home.lat, lon: home.lon } : DEFAULT_LOC);
   const locate = (label: string) => {
-    if (!navigator.geolocation) return setGeoError("Geolocation not supported");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setGeo({ name: label, lat: Math.round(p.coords.latitude * 100) / 100, lon: Math.round(p.coords.longitude * 100) / 100 });
+    currentPosition()
+      .then((p) => {
+        setGeo({ name: label, lat: Math.round(p.lat * 100) / 100, lon: Math.round(p.lon * 100) / 100 });
         setGeoError(null);
-      },
-      (e) => setGeoError(e.message),
-      { timeout: 10_000, maximumAge: 600_000 },
-    );
+      })
+      .catch((e: Error) => setGeoError(e.message));
   };
   return { loc, locate, geoError, setLoc: setGeo };
 }

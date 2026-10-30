@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ATLAS – Offline</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #04060c; color: #e8ecf5;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; text-align: center; }
+  main { padding: 24px; max-width: 340px; }
+  svg { width: 88px; height: 88px; animation: breathe 2.4s ease-in-out infinite; }
+  h1 { font-size: 22px; margin: 20px 0 6px; }
+  p { margin: 0 0 24px; color: #9aa3b5; }
+  button { appearance: none; border: 0; border-radius: 14px; padding: 13px 28px; font: inherit; font-weight: 600;
+    background: #0a84ff; color: #fff; }
+  button:active { transform: scale(0.97); }
+  @keyframes breathe { 50% { opacity: 0.55; transform: scale(0.96); } }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="-170 -170 340 340" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" aria-hidden="true">
+    <circle r="150" /><ellipse rx="62" ry="150" /><path d="M-150 0H150M-130 -75H130M-130 75H130" />
+  </svg>
+  <h1>Keine Verbindung</h1>
+  <p>ATLAS braucht Internet, um die aktuelle Weltlage zu laden. Prüfe WLAN oder mobile Daten.</p>
+  <button onclick="location.href='https://atlas-mp5l.vercel.app/'">Erneut versuchen</button>
+</main>
+</body>
+</html>

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { currentPosition } from "@/lib/native";
 import { useState } from "react";
 import { BookmarkPlus, Globe2, Layers, LocateFixed, Loader2 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
@@ -54,11 +55,9 @@ export function MapScreen() {
   };
 
   const locate = () => {
-    navigator.geolocation?.getCurrentPosition(
-      (p) => setFlyTo({ lat: p.coords.latitude, lon: p.coords.longitude, zoom: 8, key: Date.now() }),
-      () => undefined,
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 600_000 },
-    );
+    currentPosition()
+      .then((p) => setFlyTo({ lat: p.lat, lon: p.lon, zoom: 8, key: Date.now() }))
+      .catch(() => undefined);
   };
 
   return (

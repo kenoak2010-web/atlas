@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useProvider } from "@/lib/api";
 import { deriveAlerts, useAlertStore } from "@/lib/alerts";
 import { usePrefs } from "@/lib/store";
+import { canNotify, showNotices } from "@/lib/native";
 import type { AtlasEvent } from "@/lib/types";
 import type { NewsPayload } from "@/lib/news/types";
 import type { Quote } from "@/server/providers/markets";
@@ -35,13 +36,11 @@ export function AlertEngine() {
       settings,
     );
     const fresh = ingest(candidates);
-    if (!settings.notify || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (!settings.notify || !canNotify()) return;
     // Notify only about events from the last hour to avoid a burst on first launch.
     const notifiable = fresh.filter((f) => Date.now() - Date.parse(f.time) < 3600_000 && f.severity >= 2).slice(0, 3);
     if (!notifiable.length) return;
-    navigator.serviceWorker?.ready
-      .then((reg) => notifiable.forEach((n) => reg.showNotification(n.title, { body: n.body, tag: n.id, data: { url: n.url ?? "/alerts" }, icon: "/icons/icon-192.png", badge: "/icons/icon-192.png" })))
-      .catch(() => undefined);
+    showNotices(notifiable).catch(() => undefined);
   }, [on, settings, places, quakes.data, news.data, de.data, us.data, gdacs.data, crypto.data, ingest]);
 
   return null;

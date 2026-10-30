@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { shareLink } from "@/lib/native";
 import { Bookmark, BookmarkCheck, ChevronRight, Share } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useProvider } from "@/lib/api";
@@ -104,7 +105,7 @@ export function NewsDetail({ c }: { c: NewsCluster }) {
   const toggle = usePrefs((s) => s.toggleBookmark);
   const saved = bookmarks.some((b) => b.id === c.id);
   const countries = c.countries.map((k) => COUNTRY_BY_ISO2.get(k)).filter(Boolean);
-  const share = () => navigator.share?.({ title: c.title, url: c.url }).catch(() => undefined);
+  const share = () => shareLink({ title: c.title, url: c.url });
   return (
     <div className="space-y-4">
       <NewsImage src={c.image} className="aspect-[16/9] w-full rounded-2xl" />

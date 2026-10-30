@@ -1,7 +1,7 @@
-// Renders the ATLAS app icon (SVG) into the PNG sizes needed for PWA / iOS.
+// Renders the ATLAS app icon (SVG) into the PNG sizes needed for the PWA and the iOS app.
 // Run: node scripts/build-icons.mjs
 import sharp from "sharp";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 
 const svg = (pad) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1e"/><stop offset="1" stop-color="#000"/></linearGradient></defs>
@@ -25,4 +25,15 @@ for (const [name, size, pad] of jobs) {
   await sharp(Buffer.from(svg(pad))).resize(size, size).png().toFile(`public/icons/${name}`);
 }
 await sharp(Buffer.from(svg(0.1))).resize(32, 32).png().toFile("public/favicon.png");
+
+// iOS app (Capacitor): the App Store icon must be 1024px and fully opaque.
+const IOS = "ios/App/App/Assets.xcassets";
+if (existsSync(IOS)) {
+  await sharp(Buffer.from(svg(0.1))).resize(1024, 1024).flatten({ background: "#000" }).removeAlpha().png().toFile(`${IOS}/AppIcon.appiconset/AppIcon-512@2x.png`);
+  // Splash: small logo centred on the app background colour.
+  const logo = await sharp(Buffer.from(svg(0.1))).resize(560, 560).png().toBuffer();
+  const splash = sharp({ create: { width: 2732, height: 2732, channels: 3, background: "#04060c" } }).composite([{ input: logo, gravity: "center" }]).png();
+  const buf = await splash.toBuffer();
+  for (const f of ["splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"]) writeFileSync(`${IOS}/Splash.imageset/${f}`, buf);
+}
 console.log("icons written");
