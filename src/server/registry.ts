@@ -5,7 +5,7 @@ import { weatherProvider, worldWeatherProvider } from "./providers/openmeteo";
 import { newsProvider, gdeltProvider } from "./providers/news";
 import { gdacsProvider, eonetProvider, firmsProvider, gvpProvider, hansProvider, nwsProvider, dwdProvider } from "./providers/hazards";
 import { openskyProvider } from "./providers/aviation";
-import { issProvider, spaceWeatherProvider, launchesProvider } from "./providers/space";
+import { issProvider, issTrackProvider, spaceWeatherProvider, launchesProvider } from "./providers/space";
 import { cryptoProvider, cryptoChartProvider, fxProvider, fredProvider } from "./providers/markets";
 import { reliefwebProvider } from "./providers/humanitarian";
 import { geocodeProvider } from "./providers/geocode";
@@ -31,6 +31,7 @@ export const PROVIDERS: AnyProvider[] = [
   reliefwebProvider,
   openskyProvider,
   issProvider,
+  issTrackProvider,
   spaceWeatherProvider,
   launchesProvider,
   fredProvider,

@@ -167,3 +167,37 @@ export const launchesProvider = defineProvider({
     return { data, sourceUpdatedAt: null };
   },
 });
+
+const IssPosition = z.object({ latitude: z.number(), longitude: z.number(), timestamp: z.number(), visibility: z.string().optional() });
+
+export interface IssTrackPoint {
+  lat: number;
+  lon: number;
+  time: string;
+  sunlit: boolean;
+}
+
+/** Predicted ISS ground track: one orbit (~95 min) from now in 5-minute steps, computed by wheretheiss.at from current TLEs. */
+export const issTrackProvider = defineProvider({
+  id: "iss-track",
+  label: "ISS ground track (wheretheiss.at)",
+  category: "space",
+  refreshSeconds: 600,
+  freshnessClass: "periodic",
+  attribution: { name: "Where the ISS at?", url: "https://wheretheiss.at/w/developer" },
+  rateLimit: "No key; ~1 request/second, max 10 timestamps per request.",
+  note: "Positions predicted from the current orbital elements (TLE).",
+  params: z.object({}),
+  cacheKey: () => "orbit",
+  async fetch() {
+    const start = Math.floor(Date.now() / 300_000) * 300;
+    const stamps = Array.from({ length: 20 }, (_, i) => start + i * 300);
+    const out: IssTrackPoint[] = [];
+    for (let i = 0; i < stamps.length; i += 10) {
+      if (i) await new Promise((r) => setTimeout(r, 1100));
+      const rows = z.array(IssPosition).parse(await fetchJson(`https://api.wheretheiss.at/v1/satellites/25544/positions?timestamps=${stamps.slice(i, i + 10).join(",")}&units=kilometers`));
+      for (const r of rows) out.push({ lat: r.latitude, lon: r.longitude, time: new Date(r.timestamp * 1000).toISOString(), sunlit: r.visibility === "daylight" });
+    }
+    return { data: out, sourceUpdatedAt: out[0]?.time ?? null };
+  },
+});

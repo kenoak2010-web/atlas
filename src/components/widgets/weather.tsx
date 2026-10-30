@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import { usePrefs } from "@/lib/store";
 import { weatherIcon, weatherLabel } from "@/lib/weather-codes";
 import type { WeatherForecast } from "@/server/providers/openmeteo";
-import { Card, CardHeader, DataMeta, ErrorState, ListSkeleton } from "../ui";
+import { Card, CardHeader, DataMeta, ErrorState, ListSkeleton, cn } from "../ui";
 import { AirQualityRow } from "./extra-widgets";
 
 export interface WxLocation {
@@ -44,6 +44,41 @@ function hourLabel(unix: number, offset: number) {
   return new Date((unix + offset) * 1000).getUTCHours().toString().padStart(2, "0");
 }
 
+/** Background tint that follows the current sky (clear/cloudy/rain/snow/storm, day/night). */
+function skyGradient(code: number | null, isDay: boolean): string {
+  const c = code ?? 0;
+  if (!isDay) return c >= 51 ? "from-[#1b2550]/70 to-[#0b1024]/40" : "from-[#1d2a6b]/60 via-[#3a2a6e]/35 to-transparent";
+  if (c >= 95) return "from-[#4b3a7a]/60 to-[#1f2240]/30";
+  if (c >= 71 && c <= 86) return "from-[#c9d8ec]/50 to-[#8ea9c9]/20";
+  if (c >= 51) return "from-[#3a6ea5]/55 to-[#25476e]/25";
+  if (c >= 45) return "from-[#9aa5b4]/45 to-[#6b7686]/20";
+  if (c >= 2) return "from-[#6fa8dc]/45 to-[#a0b8d0]/20";
+  return "from-[#ffb340]/45 via-[#5ab0ff]/30 to-transparent";
+}
+
+/** Smooth temperature curve for the next hours. */
+function TempCurve({ temps }: { temps: (number | null)[] }) {
+  const vals = temps.filter((v): v is number => v != null);
+  if (vals.length < 2) return null;
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const pts = temps.map((v, i) => [(i / (temps.length - 1)) * 100, 26 - (((v ?? min) - min) / span) * 22] as const);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  return (
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-10 w-full" aria-hidden>
+      <defs>
+        <linearGradient id="tempfill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#ffb340" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#ffb340" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L100,30 L0,30 Z`} fill="url(#tempfill)" />
+      <path d={line} fill="none" stroke="#ffb340" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function WeatherSummary({ wx, compact }: { wx: WeatherForecast; compact?: boolean }) {
   const { t, lang } = useT();
   const c = wx.current;
@@ -55,9 +90,9 @@ export function WeatherSummary({ wx, compact }: { wx: WeatherForecast; compact?:
     pop: wx.hourly.precipitation_probability[nowIdx + i],
   }));
   return (
-    <div>
-      <div className="flex items-center gap-4 px-4">
-        <div className="text-[48px]" aria-hidden>{weatherIcon(c.weather_code)}</div>
+    <div className={cn("mx-2 rounded-[18px] bg-gradient-to-br pt-3 pb-2", skyGradient(c.weather_code, c.is_day !== 0))}>
+      <div className="flex items-center gap-4 px-3">
+        <div className="pop text-[52px] drop-shadow-[0_6px_16px_rgba(0,0,0,0.25)]" aria-hidden>{weatherIcon(c.weather_code)}</div>
         <div>
           <div className="text-[40px] leading-none font-semibold tracking-tight tabular">{c.temperature_2m != null ? Math.round(c.temperature_2m) : "–"}°</div>
           <div className="text-[14px] text-text-2">{weatherLabel(c.weather_code, lang)}</div>
@@ -69,7 +104,8 @@ export function WeatherSummary({ wx, compact }: { wx: WeatherForecast; compact?:
           <dt>{t("weather.precip")}</dt><dd className="text-right text-text">{c.precipitation ?? 0} mm</dd>
         </dl>
       </div>
-      <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4 pb-1" aria-label={t("weather.next24")}>
+      <div className="px-3 pt-2"><TempCurve temps={hours.slice(0, compact ? 12 : 24).map((h) => h.temp)} /></div>
+      <div className="no-scrollbar flex gap-4 overflow-x-auto px-3 pb-1" aria-label={t("weather.next24")}>
         {hours.slice(0, compact ? 12 : 24).map((h) => (
           <div key={h.h} className="flex shrink-0 flex-col items-center gap-0.5 text-[12px] tabular">
             <span className="text-text-2">{hourLabel(h.h, wx.utc_offset_seconds)}</span>

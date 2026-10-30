@@ -36,6 +36,7 @@ export function useNow(ms = 30_000): number {
 export function AnimatedNumber({ value, decimals = 0, className, duration = 900 }: { value: number | null | undefined; decimals?: number; className?: string; duration?: number }) {
   const [shown, setShown] = useState<number | null>(value ?? null);
   const from = useRef<number>(0);
+  const { lang } = useT();
   useEffect(() => {
     if (value == null) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -57,7 +58,7 @@ export function AnimatedNumber({ value, decimals = 0, className, duration = 900 
     };
   }, [value, duration]);
   if (value == null) return <span className={className}>–</span>;
-  return <span className={cn("tabular", className)}>{(shown ?? value).toFixed(decimals)}</span>;
+  return <span className={cn("tabular", className)}>{(shown ?? value).toLocaleString(lang === "de" ? "de-DE" : "en-GB", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 }
 
 /** true once the page is scrolled past `px` (for compact headers). */

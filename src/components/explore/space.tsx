@@ -3,10 +3,13 @@
 import { useProvider } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { formatDateTime, formatNumber } from "@/lib/format";
-import type { SpaceWeather, UpcomingLaunch } from "@/server/providers/space";
+import type { IssTrackPoint, SpaceWeather, UpcomingLaunch } from "@/server/providers/space";
+import dynamic from "next/dynamic";
 import { useNews, NewsRow } from "../news";
 import { SubPage } from "../sub-page";
-import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, RelTime, cn } from "../ui";
+import { AnimatedNumber, Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, RelTime, cn } from "../ui";
+
+const IssTracker = dynamic(() => import("../map/iss-tracker"), { ssr: false, loading: () => <div className="skeleton h-[240px] w-full rounded-none" /> });
 
 interface Iss { lat: number; lon: number; altitudeKm: number; velocityKmh: number; visibility: string | null; time: string }
 
@@ -15,6 +18,7 @@ const kpColor = (kp: number) => (kp >= 7 ? "bg-red" : kp >= 5 ? "bg-orange" : kp
 export function SpaceScreen() {
   const { t, lang } = useT();
   const iss = useProvider<Iss>("iss");
+  const track = useProvider<IssTrackPoint[]>("iss-track");
   const sw = useProvider<SpaceWeather>("space-weather");
   const launches = useProvider<UpcomingLaunch[]>("launches");
   const news = useNews();
@@ -24,12 +28,13 @@ export function SpaceScreen() {
   return (
     <SubPage title={t("explore.space")}>
       <Card>
-        <CardHeader title={t("space.iss")} />
+        <CardHeader title={t("space.iss")} subtitle={lang === "de" ? "Live-Position und nächste Erdumrundung (gestrichelt)" : "Live position and next orbit (dashed)"} />
+        {iss.data?.data && <IssTracker lat={iss.data.data.lat} lon={iss.data.data.lon} track={track.data?.data ?? []} />}
         {iss.data?.data ? (
-          <dl className="grid grid-cols-2 gap-3 px-4 pb-2 text-[13px]">
+          <dl className="grid grid-cols-2 gap-3 px-4 pt-3 pb-2 text-[13px]">
             <div><dt className="text-text-2">{lang === "de" ? "Position" : "Position"}</dt><dd className="text-[17px] font-semibold tabular">{iss.data.data.lat.toFixed(2)}°, {iss.data.data.lon.toFixed(2)}°</dd></div>
             <div><dt className="text-text-2">{t("aviation.altitude")}</dt><dd className="text-[17px] font-semibold tabular">{formatNumber(iss.data.data.altitudeKm, lang, 0)} km</dd></div>
-            <div><dt className="text-text-2">{t("aviation.speed")}</dt><dd className="text-[17px] font-semibold tabular">{formatNumber(iss.data.data.velocityKmh, lang, 0)} km/h</dd></div>
+            <div><dt className="text-text-2">{t("aviation.speed")}</dt><dd className="text-[17px] font-semibold tabular"><AnimatedNumber value={Math.round(iss.data.data.velocityKmh)} /> km/h</dd></div>
             <div><dt className="text-text-2">{lang === "de" ? "Sichtbarkeit" : "Visibility"}</dt><dd className="text-[17px] font-semibold">{iss.data.data.visibility === "daylight" ? (lang === "de" ? "Tagseite" : "Daylight") : iss.data.data.visibility === "eclipsed" ? (lang === "de" ? "Erdschatten" : "Eclipsed") : "–"}</dd></div>
           </dl>
         ) : iss.isPending ? <ListSkeleton /> : <ErrorState message={iss.data?.error ?? ""} onRetry={() => iss.refetch()} />}
@@ -40,9 +45,12 @@ export function SpaceScreen() {
       <Card>
         <CardHeader title={t("space.kp")} subtitle={lastKp ? `Kp ${lastKp.kp.toFixed(2)} · ${formatDateTime(lastKp.time, lang, { utc: true })}` : undefined} />
         {kp.length ? (
-          <div className="flex h-24 items-end gap-[3px] px-4" role="img" aria-label="Kp index, last 72 hours">
-            {kp.map((k) => (
-              <div key={k.time} className={cn("flex-1 rounded-t-[3px]", kpColor(k.kp))} style={{ height: `${Math.max(4, (k.kp / 9) * 100)}%` }} title={`${k.time}: Kp ${k.kp}`} />
+          <div className="relative mx-4 flex h-28 items-end gap-[3px]" role="img" aria-label="Kp index, last 72 hours">
+            <div className="absolute inset-x-0 border-t border-dashed border-orange/60" style={{ bottom: `${(5 / 9) * 100}%` }} aria-hidden>
+              <span className="absolute -top-4 right-0 text-[9px] font-semibold text-orange">G1</span>
+            </div>
+            {kp.map((k, i) => (
+              <div key={k.time} className={cn("grow-y flex-1 rounded-t-[3px]", kpColor(k.kp))} style={{ height: `${Math.max(4, (k.kp / 9) * 100)}%`, animationDelay: `${i * 12}ms` }} title={`${k.time}: Kp ${k.kp}`} />
             ))}
           </div>
         ) : sw.isPending ? <ListSkeleton /> : <ErrorState message={sw.data?.error ?? ""} onRetry={() => sw.refetch()} />}

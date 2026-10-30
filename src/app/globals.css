@@ -323,6 +323,16 @@ body {
   animation: pop 420ms var(--ease-spring) both;
 }
 
+/* Chart bars grow from the baseline */
+@keyframes grow-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+.grow-y {
+  transform-origin: bottom;
+  animation: grow-y 700ms var(--ease-out) both;
+}
+
 /* Images fade in once loaded */
 .img-fade {
   opacity: 0;
