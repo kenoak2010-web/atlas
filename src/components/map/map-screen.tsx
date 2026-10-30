@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { BookmarkPlus, Layers, LocateFixed, Loader2 } from "lucide-react";
+import { BookmarkPlus, Globe2, Layers, LocateFixed, Loader2 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { MAP_LAYERS, usePrefs, type MapLayerId } from "@/lib/store";
 import { useDark } from "@/lib/use-dark";
@@ -10,7 +10,7 @@ import { distanceKm } from "@/lib/geo";
 import { AIRCRAFT_MIN_ZOOM, useMapData, type MapFilters } from "./use-map-data";
 import { COLORS } from "./styles";
 import { PlaceSearch } from "../place-search";
-import { Chip, ChipRow, DataMeta, Segmented, Sheet, Toggle } from "../ui";
+import { Chip, ChipRow, DataMeta, Segmented, Sheet, Toggle, cn } from "../ui";
 
 const AtlasMap = dynamic(() => import("./atlas-map"), { ssr: false, loading: () => <div className="skeleton h-full w-full rounded-none" /> });
 
@@ -28,8 +28,10 @@ const LAYER_COLOR: Record<MapLayerId, string> = {
 };
 
 export function MapScreen() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const dark = useDark();
+  const globe = usePrefs((s) => s.mapGlobe);
+  const setPref = usePrefs((s) => s.set);
   const defaults = usePrefs((s) => s.mapLayers);
   const places = usePrefs((s) => s.places);
   const addPlace = usePrefs((s) => s.addPlace);
@@ -60,11 +62,12 @@ export function MapScreen() {
   };
 
   return (
-    <div className="fixed inset-0 bottom-[calc(env(safe-area-inset-bottom)+50px)] bg-surface-2">
+    <div className="fixed inset-0 bg-bg">
       <AtlasMap
         data={data}
         visible={visible}
         dark={dark}
+        globe={globe}
         flyTo={flyTo}
         onBasemapFallback={() => setFallback(true)}
         onViewChange={(v) => {
@@ -73,7 +76,7 @@ export function MapScreen() {
         }}
       />
       <div className="pointer-events-none absolute inset-x-0 top-0 pt-safe">
-        <div className="pointer-events-auto mx-auto flex max-w-[640px] gap-2 px-3 pt-2 pr-14">
+        <div className="pointer-events-auto mx-auto flex max-w-[640px] gap-2 px-3 pt-2">
           <div className="flex-1">
             <PlaceSearch onPick={(p) => setFlyTo({ lat: p.lat, lon: p.lon, zoom: p.countryCode && !p.bbox ? 4.5 : 9, bbox: p.bbox, key: Date.now() })} />
           </div>
@@ -92,19 +95,22 @@ export function MapScreen() {
         {fallback && <div className="mx-auto mt-1 w-fit rounded-full bg-orange/90 px-3 py-1 text-[12px] text-white">{t("map.tilesFallback")}</div>}
       </div>
 
-      <div className="absolute right-3 bottom-4 flex flex-col gap-2">
+      <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+84px)] flex flex-col gap-2">
         {loading && (
-          <div className="grid h-11 w-11 place-items-center rounded-full bg-surface shadow-lg" aria-label={t("common.loading")}>
+          <div className="grid h-11 w-11 place-items-center card rounded-full" aria-label={t("common.loading")}>
             <Loader2 size={18} className="animate-spin text-text-2" />
           </div>
         )}
-        <button onClick={locate} className="grid h-11 w-11 place-items-center rounded-full bg-surface text-accent shadow-lg" aria-label={t("map.locate")}>
+        <button onClick={() => setPref("mapGlobe", !globe)} aria-pressed={globe} className={cn("card press grid h-11 w-11 place-items-center rounded-full", globe ? "text-white bg-accent-gradient" : "text-accent")} aria-label={lang === "de" ? "3D-Globus" : "3D globe"}>
+          <Globe2 size={20} />
+        </button>
+        <button onClick={locate} className="grid h-11 w-11 place-items-center card press rounded-full text-accent" aria-label={t("map.locate")}>
           <LocateFixed size={20} />
         </button>
-        <button onClick={saveRegion} className="grid h-11 w-11 place-items-center rounded-full bg-surface text-accent shadow-lg" aria-label={t("map.saveRegion")}>
+        <button onClick={saveRegion} className="grid h-11 w-11 place-items-center card press rounded-full text-accent" aria-label={t("map.saveRegion")}>
           <BookmarkPlus size={20} />
         </button>
-        <button onClick={() => setSheet(true)} className="grid h-11 w-11 place-items-center rounded-full bg-surface text-accent shadow-lg" aria-label={t("map.layers")}>
+        <button onClick={() => setSheet(true)} className="grid h-11 w-11 place-items-center card press rounded-full text-accent" aria-label={t("map.layers")}>
           <Layers size={20} />
         </button>
       </div>

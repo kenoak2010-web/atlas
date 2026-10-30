@@ -7,7 +7,7 @@ export type Lang = "de" | "en";
 export type ThemePref = "system" | "light" | "dark";
 export type RefreshMode = "normal" | "saver" | "manual";
 
-export const WIDGETS = ["brief", "map", "quakes", "weather", "alerts", "aviation", "markets", "tv", "timeline"] as const;
+export const WIDGETS = ["brief", "activity", "map", "quakes", "weather", "sky", "earth", "alerts", "aviation", "markets", "history", "tv", "timeline"] as const;
 export type WidgetId = (typeof WIDGETS)[number];
 
 export const MAP_LAYERS = ["news", "quakes", "disasters", "weather", "alerts", "wildfires", "volcanoes", "humanitarian", "aircraft", "iss"] as const;
@@ -60,6 +60,8 @@ export interface Prefs {
   /** Market symbols pinned to the economy watchlist */
   watchlist: string[];
   alerts: AlertSettings;
+  /** Map shown as 3D globe */
+  mapGlobe: boolean;
 }
 
 interface Actions {
@@ -75,7 +77,7 @@ interface Actions {
 
 export const DEFAULT_PREFS: Prefs = {
   lang: "de",
-  theme: "system",
+  theme: "dark",
   refresh: "normal",
   widgetOrder: [...WIDGETS],
   hiddenWidgets: [],
@@ -89,6 +91,7 @@ export const DEFAULT_PREFS: Prefs = {
   savedSearches: [],
   watchedAirports: [],
   watchlist: [],
+  mapGlobe: true,
   alerts: {
     enabled: true,
     notify: false,
@@ -139,7 +142,12 @@ export const usePrefs = create<Prefs & Actions>()(
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Prefs>;
         const order = (p.widgetOrder ?? []).filter((w) => (WIDGETS as readonly string[]).includes(w));
-        for (const w of WIDGETS) if (!order.includes(w)) order.push(w);
+        // New widgets go in right after their predecessor in the default order.
+        WIDGETS.forEach((w, i) => {
+          if (order.includes(w)) return;
+          const prev = i > 0 ? order.indexOf(WIDGETS[i - 1]) : -1;
+          order.splice(prev + 1, 0, w);
+        });
         return { ...current, ...p, widgetOrder: order, alerts: { ...DEFAULT_PREFS.alerts, ...p.alerts } };
       },
     },

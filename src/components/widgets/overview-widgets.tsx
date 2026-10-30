@@ -1,24 +1,19 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo } from "react";
-import { Activity, Bell, Clock, Maximize2, Newspaper, Plane, TrendingUp, Tv } from "lucide-react";
+import { Activity, Bell, Clock, Newspaper, Plane, TrendingUp, Tv } from "lucide-react";
 import { useProvider } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import type { AtlasEvent } from "@/lib/types";
 import { usePrefs } from "@/lib/store";
-import { useDark } from "@/lib/use-dark";
 import { CHANNELS } from "@/lib/channels";
 import { formatNumber, formatPct } from "@/lib/format";
 import type { Quote } from "@/server/providers/markets";
 import { useNews, NewsRow } from "../news";
 import { EventRow } from "../events";
 import { useTimeline, TimelineList } from "../timeline";
-import { useMapData, type MapFilters } from "../map/use-map-data";
 import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, cn } from "../ui";
-
-const AtlasMap = dynamic(() => import("../map/atlas-map"), { ssr: false, loading: () => <div className="skeleton h-full w-full rounded-none" /> });
 
 export function BriefWidget() {
   const { t } = useT();
@@ -38,24 +33,6 @@ export function BriefWidget() {
         <ErrorState message={q.data?.error ?? q.error?.message ?? ""} onRetry={() => q.refetch()} />
       )}
       <DataMeta env={q.data} className="px-4 pt-1 pb-3" />
-    </Card>
-  );
-}
-
-const MINI_FILTERS: MapFilters = { minMag: "4.5", range: "day", maxAgeH: 24, bbox: null, zoom: 0 };
-
-export function MiniMapWidget() {
-  const { t } = useT();
-  const dark = useDark();
-  const layers = usePrefs((s) => s.mapLayers);
-  const visible = layers.filter((l) => l !== "aircraft");
-  const { data } = useMapData(visible, MINI_FILTERS);
-  return (
-    <Card>
-      <CardHeader title={t("widget.map")} href="/map" action={<Link href="/map" aria-label={t("widget.map")} className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-accent"><Maximize2 size={15} /></Link>} />
-      <div className="h-[220px] w-full">
-        <AtlasMap data={data} visible={visible} dark={dark} initial={{ center: [15, 20], zoom: 0.4 }} />
-      </div>
     </Card>
   );
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 export const USER_AGENT =
   process.env.ATLAS_USER_AGENT ??
-  "ATLAS-Global-Intelligence-Center/1.0 (+https://github.com/; personal non-commercial dashboard)";
+  "ATLAS-Global-Intelligence-Center/1.0 (+https://github.com/kenoak2010-web/atlas; personal non-commercial dashboard)";
 
 export class UpstreamError extends Error {
   constructor(

@@ -14,8 +14,8 @@ markets and official live TV. Built for iPhone (Safari, Home Screen), German fir
 
 | Area | What you get |
 |---|---|
-| Übersicht | Clock with world times, local weather, breaking/top stories, status strip, reorderable widgets |
-| Karte | MapLibre world map: earthquakes, disasters (GDACS/EONET), weather warnings, volcanoes, fires, aircraft (viewport), ISS, news by country |
+| Übersicht | Animated 3D globe with live events and computed day/night line, headline ticker, world clocks, global activity index (transparent formula), weather + air quality, sun/moon/aurora, NASA EPIC Earth photo, “On this day”, reorderable widgets |
+| Karte | MapLibre map with 3D globe mode and day/night shading: earthquakes, disasters (GDACS/EONET), weather warnings, volcanoes, fires, aircraft (viewport), ISS, news by country |
 | Nachrichten | 18 official RSS feeds, deduplicated and clustered into stories, transparent ranking, topic/region filters, bookmarks |
 | Live-TV | 13 official broadcaster streams via YouTube embeds + 2 official links, favourites |
 | Entdecken | Hazards, weather (world cities, DWD/NWS warnings), aviation, space (ISS, launches, Kp), economy (indices, oil, crypto, FX, market hours), humanitarian |

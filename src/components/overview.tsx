@@ -7,14 +7,20 @@ import { useT } from "@/lib/i18n";
 import { usePrefs, type WidgetId } from "@/lib/store";
 import { OfflineBanner, TopActions } from "./top-bar";
 import { PageHeader } from "./ui";
-import { Clocks } from "./widgets/clock";
-import { StatusStrip } from "./widgets/status-strip";
+import dynamic from "next/dynamic";
+import { ActivityWidget, EarthWidget, HistoryWidget, NewsTicker, SkyWidget, WorldClocks } from "./widgets/extra-widgets";
 import { WeatherWidget } from "./widgets/weather";
-import { AlertsWidget, AviationWidget, BriefWidget, MarketsWidget, MiniMapWidget, QuakesWidget, TimelineWidget, TvWidget } from "./widgets/overview-widgets";
+import { AlertsWidget, AviationWidget, BriefWidget, MarketsWidget, QuakesWidget, TimelineWidget, TvWidget } from "./widgets/overview-widgets";
 
-const WIDGET_COMPONENTS: Record<WidgetId, ComponentType> = {
+const GlobeHero = dynamic(() => import("./widgets/globe-hero").then((m) => m.GlobeHero), { ssr: false, loading: () => <div className="card skeleton h-[300px]" /> });
+
+// "map" is rendered as the globe hero at the top, so it is not part of the stack.
+const WIDGET_COMPONENTS: Record<Exclude<WidgetId, "map">, ComponentType> = {
   brief: BriefWidget,
-  map: MiniMapWidget,
+  activity: ActivityWidget,
+  sky: SkyWidget,
+  earth: EarthWidget,
+  history: HistoryWidget,
   quakes: QuakesWidget,
   weather: WeatherWidget,
   alerts: AlertsWidget,
@@ -33,11 +39,12 @@ export function Overview() {
     <div className="page">
       <PageHeader title={t("overview.title")} subtitle={<span suppressHydrationWarning>{today}</span>} action={<TopActions />} />
       <OfflineBanner />
-      <div className="space-y-3 px-4">
-        <Clocks />
-        <StatusStrip />
+      <div className="rise space-y-3 px-4">
+        {!hidden.includes("map") && <GlobeHero />}
+        <NewsTicker />
+        <WorldClocks />
         {order
-          .filter((w) => !hidden.includes(w))
+          .filter((w): w is Exclude<WidgetId, "map"> => w !== "map" && !hidden.includes(w) && w in WIDGET_COMPONENTS)
           .map((w) => {
             const W = WIDGET_COMPONENTS[w];
             return <W key={w} />;

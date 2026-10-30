@@ -8,7 +8,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://tiles.openfreemap.org",
+  "img-src 'self' data: blob: https://tiles.openfreemap.org https://epic.gsfc.nasa.gov https://upload.wikimedia.org https://thumb.wikimedia.org",
   "font-src 'self' data:",
   "connect-src 'self' https://tiles.openfreemap.org",
   "worker-src 'self' blob:",

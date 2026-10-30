@@ -10,6 +10,7 @@ import { cryptoProvider, cryptoChartProvider, fxProvider, fredProvider } from ".
 import { reliefwebProvider } from "./providers/humanitarian";
 import { geocodeProvider } from "./providers/geocode";
 import { youtubeLiveProvider } from "./providers/youtube";
+import { airQualityProvider, epicProvider, onThisDayProvider } from "./providers/extras";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyProvider = Provider<any, any>;
@@ -38,6 +39,9 @@ export const PROVIDERS: AnyProvider[] = [
   fxProvider,
   geocodeProvider,
   youtubeLiveProvider,
+  airQualityProvider,
+  epicProvider,
+  onThisDayProvider,
 ];
 
 export const PROVIDER_BY_ID = new Map(PROVIDERS.map((p) => [p.id, p]));

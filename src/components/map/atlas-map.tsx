@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { BASEMAP, COLORS, offlineStyle } from "./styles";
 import type { MapLayerId } from "@/lib/store";
 import { useSelection, type Selection } from "@/lib/selection";
+import { nightPolygon } from "@/lib/astro";
 
 export interface MapFeature {
   id: string;
@@ -26,6 +27,8 @@ export interface AtlasMapProps {
   flyTo?: { lat: number; lon: number; zoom?: number; bbox?: [number, number, number, number] | null; key: number } | null;
   onViewChange?: (v: { bounds: [number, number, number, number]; zoom: number; center: [number, number] }) => void;
   onBasemapFallback?: () => void;
+  /** 3D globe instead of Web Mercator */
+  globe?: boolean;
 }
 
 // Worker is served from /public (see scripts/copy-maplibre-worker.mjs).
@@ -77,8 +80,15 @@ function planeImage(): ImageData {
   return g.getImageData(0, 0, s, s);
 }
 
-function addLayers(map: MLMap) {
+function nightData(): GeoJSON.FeatureCollection {
+  return { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [nightPolygon(Date.now())] } }] };
+}
+
+function addLayers(map: MLMap, dark: boolean) {
   if (!map.hasImage("plane")) map.addImage("plane", planeImage(), { pixelRatio: 2 });
+  // Day/night shading (computed from the sun's position), below all data layers.
+  if (!map.getSource("night")) map.addSource("night", { type: "geojson", data: nightData() });
+  map.addLayer({ id: "night", type: "fill", source: "night", paint: { "fill-color": "#000814", "fill-opacity": dark ? 0.38 : 0.16 } });
   const font = ["Noto Sans Regular"];
   const add = (id: MapLayerId) => {
     if (map.getSource(id)) return;
@@ -207,7 +217,7 @@ const LAYER_IDS: Record<MapLayerId, string[]> = {
 
 const CLICKABLE = Object.values(LAYER_IDS).flat().filter((l) => !l.endsWith("-count") && !l.endsWith("-labels") && l !== "iss-halo");
 
-export default function AtlasMap({ data, visible, dark, interactive = true, initial, flyTo, onViewChange, onBasemapFallback }: AtlasMapProps) {
+export default function AtlasMap({ data, visible, dark, interactive = true, initial, flyTo, onViewChange, onBasemapFallback, globe = false }: AtlasMapProps) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(0);
@@ -216,11 +226,13 @@ export default function AtlasMap({ data, visible, dark, interactive = true, init
   const viewCb = useRef(onViewChange);
   const fallbackCb = useRef(onBasemapFallback);
   const darkRef = useRef(dark);
+  const globeRef = useRef(globe);
   const offline = useRef(false);
   useEffect(() => {
     viewCb.current = onViewChange;
     fallbackCb.current = onBasemapFallback;
     darkRef.current = dark;
+    globeRef.current = globe;
   });
 
   // Create map once.
@@ -241,7 +253,6 @@ export default function AtlasMap({ data, visible, dark, interactive = true, init
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
-    if (interactive) map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.on("error", (e: MLErrorEvent) => {
       // Style could not be loaded (network/tile host down) → switch to fallback once.
       const msg = String(e.error?.message ?? "");
@@ -253,7 +264,13 @@ export default function AtlasMap({ data, visible, dark, interactive = true, init
       }
     });
     map.on("style.load", () => {
-      addLayers(map);
+      map.setProjection({ type: globeRef.current ? "globe" : "mercator" });
+      map.setSky(
+        darkRef.current
+          ? { "sky-color": "#04060c", "horizon-color": "#1b3a7a", "fog-color": "#04060c", "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 7, 0] }
+          : { "sky-color": "#eef1f7", "horizon-color": "#9cc3ff", "fog-color": "#eef1f7", "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 7, 0] },
+      );
+      addLayers(map, darkRef.current);
       setReady((r) => r + 1);
     });
     const emit = () => {
@@ -302,6 +319,19 @@ export default function AtlasMap({ data, visible, dark, interactive = true, init
     }
     mapRef.current?.setStyle(offline.current ? offlineStyle(dark) : dark ? BASEMAP.dark : BASEMAP.light);
   }, [dark]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    map.setProjection({ type: globe ? "globe" : "mercator" });
+  }, [globe, ready]);
+
+  // Keep the terminator current.
+  useEffect(() => {
+    if (!ready) return;
+    const id = setInterval(() => (mapRef.current?.getSource("night") as GeoJSONSource | undefined)?.setData(nightData()), 60_000);
+    return () => clearInterval(id);
+  }, [ready]);
 
   // Push data into sources.
   useEffect(() => {

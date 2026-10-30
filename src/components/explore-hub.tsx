@@ -29,13 +29,14 @@ export function ExploreHub() {
   return (
     <div className="page">
       <PageHeader title={t("explore.title")} action={<TopActions />} />
-      <div className="grid grid-cols-2 gap-3 px-4">
+      <div className="rise grid grid-cols-2 gap-3 px-4">
         {MODULES.map(({ href, key, icon: Icon, color }) => (
-          <Link key={href} href={href} className="card flex min-h-[96px] flex-col justify-between p-4">
-            <span className="grid h-9 w-9 place-items-center rounded-xl text-white" style={{ background: color }}>
+          <Link key={href} href={href} className="card press flex min-h-[104px] flex-col justify-between overflow-hidden p-4">
+            <span className="pointer-events-none absolute -top-8 -right-8 h-28 w-28 rounded-full opacity-30 blur-2xl" style={{ background: color }} aria-hidden />
+            <span className="relative grid h-10 w-10 place-items-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${color}, ${color}aa)`, boxShadow: `0 8px 22px -8px ${color}` }}>
               <Icon size={19} />
             </span>
-            <span className="text-[16px] font-semibold tracking-tight">{t(key)}</span>
+            <span className="relative text-[16px] font-semibold tracking-tight">{t(key)}</span>
           </Link>
         ))}
       </div>

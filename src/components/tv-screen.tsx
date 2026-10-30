@@ -12,6 +12,9 @@ import { Card, Chip, ChipRow, PageHeader, cn } from "./ui";
 
 type LiveMap = Record<string, LiveVideo>;
 
+/** Stable colour per channel for its monogram tile. */
+const hue = (id: string) => [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 7);
+
 function Player({ c, live, onClose }: { c: Channel; live?: LiveVideo; onClose: () => void }) {
   const { t } = useT();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -108,9 +111,12 @@ export function TvScreen() {
             const fav = favs.includes(c.id);
             const playing = active?.id === c.id;
             return (
-              <div key={c.id} className={cn("card flex flex-col justify-between gap-3 p-3", playing && "ring-2 ring-accent")}>
+              <div key={c.id} className={cn("card flex flex-col justify-between gap-3 p-3", playing && "ring-2 ring-accent glow")}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
+                    <div className="mb-2 grid h-9 w-9 place-items-center rounded-xl text-[12px] font-extrabold text-white" style={{ background: `linear-gradient(135deg, hsl(${hue(c.id)} 80% 55%), hsl(${(hue(c.id) + 50) % 360} 80% 45%))` }} aria-hidden>
+                      {c.name.replace(/[^A-Za-z0-9 ]/g, "").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+                    </div>
                     <div className="text-[15px] leading-tight font-semibold">{c.name}</div>
                     <div className="mt-0.5 text-[11px] text-text-2 uppercase">{c.lang} · {c.country}</div>
                   </div>
@@ -127,7 +133,7 @@ export function TvScreen() {
                       setActive(c);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-accent text-[14px] font-semibold text-white"
+                    className="press bg-accent-gradient inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl text-[14px] font-semibold text-white shadow-[0_8px_22px_-10px_var(--accent)]"
                   >
                     <Play size={15} fill="currentColor" /> {t("tv.play")}
                   </button>

@@ -31,6 +31,9 @@ Last live verification: **2026-10-28**, from a cloud container (`npm run verify:
 | fx | [Frankfurter](https://frankfurter.dev) (ECB reference rates) | 1 h | – | – | ✅ (ECB publishes ~16:00 CET on working days) |
 | geocode | [Photon](https://photon.komoot.io) (OpenStreetMap) place search | 24 h cache | – | Fair use; input debounced | ✅ |
 | youtube-live | [YouTube Data API v3](https://developers.google.com/youtube/v3): current live video per channel | 30 min | `YOUTUBE_API_KEY` | 10,000 units/day; ATLAS ~50–600 | ⏸ not configured (logic unit-tested) |
+| air-quality | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (Copernicus CAMS model) | 30 min | – | < 10,000 calls/day | ✅ 2026-10-30 |
+| epic | [NASA EPIC](https://epic.gsfc.nasa.gov) full-disc Earth photos (DSCOVR, L1) | 3 h | – | Public archive | ✅ 13 images (12–48 h delay) |
+| on-this-day | [Wikimedia Feed API](https://api.wikimedia.org/wiki/Feed_API/Reference/On_this_day) "On this day" | 6 h | – | Wikimedia API etiquette | ⚠️ works, but HTTP 429 from the shared cloud IP during testing |
 | basemap | [OpenFreeMap](https://openfreemap.org) vector tiles (© OpenStreetMap) | – | – | Free, no key | ✅; bundled Natural Earth fallback when unreachable |
 
 ## News feeds
@@ -73,3 +76,10 @@ plus BBC News and CNBC as link-only (geo-restricted / pay-TV).
 
 DAX, FTSE, Euro Stoxx and gold prices; flight schedules / airport departures; ship positions (AIS);
 real-time exchange quotes; push notifications while the app is closed.
+
+## Computed locally (no source)
+
+Day/night terminator, sunrise/sunset, day length, moon phase (NOAA solar equations, `src/lib/astro.ts`),
+world-clock day/night icons, and the **Global activity index** – a weighted sum of current events
+(quakes by magnitude, GDACS red/orange alerts, breaking stories, severe weather warnings). The formula is
+shown in the app; it is an ATLAS metric, not an official risk rating.

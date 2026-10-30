@@ -164,7 +164,7 @@ export function Chip({ active, onClick, children, className }: { active?: boolea
       aria-pressed={active}
       className={cn(
         "inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-full px-3.5 text-[13px] font-medium transition-colors",
-        active ? "bg-text text-bg" : "bg-surface text-text shadow-[var(--shadow)] dark:bg-surface-2",
+        active ? "bg-accent-gradient text-white shadow-[0_6px_20px_-6px_var(--accent)]" : "border border-[var(--border)] bg-surface text-text backdrop-blur-xl",
         className,
       )}
     >
@@ -186,7 +186,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={cn("min-h-[30px] rounded-[8px] px-3 text-[13px] font-medium transition-all", o.value === value ? "bg-surface text-text shadow-sm dark:bg-[#636366]" : "text-text-2")}
+          className={cn("min-h-[30px] rounded-[8px] px-3 text-[13px] font-medium transition-all", o.value === value ? "bg-surface-solid text-text shadow-sm dark:bg-white/15" : "text-text-2")}
         >
           {o.label}
         </button>
@@ -215,7 +215,7 @@ export function ExternalButton({ href, children, className }: { href: string; ch
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn("inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-[15px] font-semibold text-white", className)}
+      className={cn("press bg-accent-gradient inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold text-white shadow-[0_8px_24px_-8px_var(--accent)]", className)}
     >
       {children} <ExternalLink size={15} aria-hidden />
     </a>
@@ -236,13 +236,13 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button className="absolute inset-0 bg-black/35" onClick={onClose} aria-label={t("common.close")} />
+      <button className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} aria-label={t("common.close")} />
       <div
-        className="sheet-in relative max-h-[86dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[22px] bg-surface pb-safe shadow-2xl"
+        className="sheet-in relative max-h-[86dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[26px] border-t border-[var(--border)] bg-surface-solid pb-safe shadow-2xl"
         style={{ transform: dy > 0 ? `translateY(${dy}px)` : undefined }}
       >
         <div
-          className="sticky top-0 z-10 bg-surface/95 px-4 pt-2 pb-2 backdrop-blur"
+          className="sticky top-0 z-10 bg-surface-solid/95 px-4 pt-2 pb-2 backdrop-blur"
           onTouchStart={(e) => (startY.current = e.touches[0].clientY)}
           onTouchMove={(e) => startY.current != null && setDy(Math.max(0, e.touches[0].clientY - startY.current))}
           onTouchEnd={() => {
@@ -267,9 +267,13 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: ReactNode; action?: ReactNode }) {
   return (
-    <header className="flex items-end justify-between gap-3 px-4 pt-3 pb-3">
+    <header className="flex items-end justify-between gap-3 px-4 pt-4 pb-3">
       <div className="min-w-0">
-        <h1 className="text-[32px] leading-tight font-bold tracking-tight">{title}</h1>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-[0.28em] text-accent uppercase">
+          <span className="ping h-1.5 w-1.5 rounded-full bg-accent text-accent" aria-hidden />
+          Atlas
+        </div>
+        <h1 className="text-gradient text-[34px] leading-tight font-extrabold tracking-tight">{title}</h1>
         {subtitle && <div className="mt-0.5 text-[13px] text-text-2">{subtitle}</div>}
       </div>
       {action}
@@ -278,7 +282,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 }
 
 export function Row({ children, onClick, href, className }: { children: ReactNode; onClick?: () => void; href?: string; className?: string }) {
-  const cls = cn("flex w-full min-h-[44px] items-center gap-3 px-4 py-2.5 text-left active:bg-surface-2", className);
+  const cls = cn("flex w-full min-h-[44px] items-center gap-3 px-4 py-2.5 text-left transition-colors active:bg-surface-2", className);
   if (href) return <Link href={href} className={cls}>{children}</Link>;
   if (onClick) return <button onClick={onClick} className={cls}>{children}</button>;
   return <div className={cls}>{children}</div>;

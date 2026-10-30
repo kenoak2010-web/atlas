@@ -12,13 +12,13 @@ export function TopActions() {
   const { t } = useT();
   return (
     <div className="flex items-center gap-2">
-      <Link href="/search" aria-label={t("common.search")} className="grid h-9 w-9 place-items-center rounded-full bg-surface text-text shadow-[var(--shadow)] dark:bg-surface-2">
+      <Link href="/search" aria-label={t("common.search")} className="grid h-10 w-10 place-items-center card press rounded-full text-text">
         <Search size={18} />
       </Link>
-      <Link href="/alerts" aria-label={t("alerts.title")} className="relative grid h-9 w-9 place-items-center rounded-full bg-surface text-text shadow-[var(--shadow)] dark:bg-surface-2">
+      <Link href="/alerts" aria-label={t("alerts.title")} className="relative grid h-10 w-10 place-items-center card press rounded-full text-text">
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] rounded-full bg-red px-1 text-center text-[11px] leading-[18px] font-bold text-white tabular">{unread > 99 ? "99+" : unread}</span>
+          <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red shadow-[0_0_12px_var(--red)] px-1 text-center text-[11px] leading-[18px] font-bold text-white tabular">{unread > 99 ? "99+" : unread}</span>
         )}
       </Link>
     </div>

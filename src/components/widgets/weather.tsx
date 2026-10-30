@@ -8,6 +8,7 @@ import { usePrefs } from "@/lib/store";
 import { weatherIcon, weatherLabel } from "@/lib/weather-codes";
 import type { WeatherForecast } from "@/server/providers/openmeteo";
 import { Card, CardHeader, DataMeta, ErrorState, ListSkeleton } from "../ui";
+import { AirQualityRow } from "./extra-widgets";
 
 export interface WxLocation {
   name: string;
@@ -128,6 +129,7 @@ export function WeatherWidget() {
         }
       />
       {q.isPending ? <ListSkeleton rows={2} /> : q.data?.data ? <WeatherSummary wx={q.data.data} compact /> : <ErrorState message={q.data?.error ?? q.error?.message ?? ""} onRetry={() => q.refetch()} compact />}
+      <AirQualityRow lat={loc.lat} lon={loc.lon} />
       {geoError && <div className="px-4 pt-1 text-[11px] text-red">{geoError}</div>}
       <DataMeta env={q.data} className="px-4 pt-2 pb-3" />
     </Card>
