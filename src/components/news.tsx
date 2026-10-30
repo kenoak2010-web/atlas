@@ -1,6 +1,7 @@
 "use client";
 
-import { Bookmark, BookmarkCheck, Share } from "lucide-react";
+import Link from "next/link";
+import { Bookmark, BookmarkCheck, ChevronRight, Share } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useProvider } from "@/lib/api";
 import { useT, type TKey } from "@/lib/i18n";
@@ -112,7 +113,13 @@ export function NewsDetail({ c }: { c: NewsCluster }) {
       {c.summary && <p className="text-[15px] leading-relaxed text-text-2">{c.summary}</p>}
       {countries.length > 0 && (
         <div className="text-[13px] text-text-2">
-          {countries.map((k) => `${k!.flag} ${lang === "de" ? k!.de : k!.en}`).join(" · ")}
+          <div className="flex flex-wrap gap-1.5">
+            {countries.map((k) => (
+              <Link key={k!.iso2} href={`/country?c=${k!.iso2}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-[13px] font-medium text-text">
+                {k!.flag} {lang === "de" ? k!.de : k!.en} <ChevronRight size={13} className="text-text-3" />
+              </Link>
+            ))}
+          </div>
           <div className="text-[11px] text-text-3">{t("common.approxLocation")}</div>
         </div>
       )}

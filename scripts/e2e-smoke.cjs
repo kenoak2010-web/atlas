@@ -7,7 +7,7 @@ const fs = require("node:fs");
 
 const BASE = process.env.ATLAS_URL || "http://localhost:3000";
 const OUT = process.env.SHOTS_DIR || "test-results/screens";
-const ALL = ["/", "/map", "/news", "/tv", "/explore", "/explore/hazards", "/explore/weather", "/explore/aviation", "/explore/space", "/explore/economy", "/explore/humanitarian", "/timeline", "/search", "/alerts", "/settings", "/sources", "/saved", "/offline"];
+const ALL = ["/", "/map", "/news", "/tv", "/explore", "/explore/hazards", "/explore/weather", "/explore/aviation", "/explore/space", "/explore/economy", "/explore/humanitarian", "/timeline", "/search", "/alerts", "/settings", "/sources", "/saved", "/offline", "/country", "/country?c=JP"];
 const paths = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 const scheme = process.env.SCHEME || "light";
 

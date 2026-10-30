@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Bell, Bookmark, CloudSun, Database, HeartHandshake, History, Plane, Rocket, Search, Settings, TrendingUp } from "lucide-react";
+import { Activity, Bell, Flag, Bookmark, CloudSun, Database, HeartHandshake, History, Plane, Rocket, Search, Settings, TrendingUp } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { TopActions } from "./top-bar";
 import { PageHeader } from "./ui";
@@ -14,6 +14,7 @@ const MODULES: { href: string; key: TKey; icon: typeof Plane; color: string }[] 
   { href: "/explore/economy", key: "explore.economy", icon: TrendingUp, color: "#30d158" },
   { href: "/explore/humanitarian", key: "explore.humanitarian", icon: HeartHandshake, color: "#ff375f" },
   { href: "/timeline", key: "explore.timeline", icon: History, color: "#0a84ff" },
+  { href: "/country", key: "explore.countries", icon: Flag, color: "#ff6b3d" },
   { href: "/search", key: "explore.search", icon: Search, color: "#8e8e93" },
 ];
 

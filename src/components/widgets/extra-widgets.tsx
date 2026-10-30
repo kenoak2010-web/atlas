@@ -67,7 +67,7 @@ interface Contribution {
  * tracks – it is not an official risk rating.
  */
 export function activityIndex(input: { quakes: AtlasEvent[]; gdacs: AtlasEvent[]; breaking: number; severeWeather: number }, lang: string) {
-  const mag = (e: AtlasEvent) => Number(e.meta?.mag ?? 0);
+  const mag = (e: AtlasEvent) => Number(e.meta?.magnitude ?? 0);
   const q7 = input.quakes.filter((e) => mag(e) >= 7).length;
   const q6 = input.quakes.filter((e) => mag(e) >= 6 && mag(e) < 7).length;
   const q5 = input.quakes.filter((e) => mag(e) < 6).length;

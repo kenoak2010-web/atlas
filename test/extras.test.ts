@@ -10,7 +10,7 @@ const ev = (severity: number, mag?: number): AtlasEvent => ({
   source: { name: "t" },
   time: "2026-10-30T00:00:00Z",
   severity: severity as AtlasEvent["severity"],
-  meta: mag != null ? { mag } : undefined,
+  meta: mag != null ? { magnitude: mag } : undefined,
 });
 
 describe("extras", () => {

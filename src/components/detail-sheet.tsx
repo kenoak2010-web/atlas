@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSelection } from "@/lib/selection";
 import { useT } from "@/lib/i18n";
 import { formatDateTime, formatNumber } from "@/lib/format";
@@ -12,6 +14,12 @@ export function DetailSheet() {
   const { sel, select } = useSelection();
   const { t, lang } = useT();
   const close = () => select(null);
+  const path = usePathname();
+  const query = useSearchParams().toString();
+  // Close the sheet when a link inside it navigates somewhere else.
+  useEffect(() => {
+    select(null);
+  }, [path, query, select]);
   if (!sel) return null;
   if (sel.type === "news") return <Sheet open onClose={close} title={t("nav.news")}><NewsDetail c={sel.cluster} /></Sheet>;
   if (sel.type === "event") return <Sheet open onClose={close} title={t("common.details")}><EventDetail e={sel.event} /></Sheet>;

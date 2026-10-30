@@ -8,6 +8,7 @@ import { usePrefs, type WidgetId } from "@/lib/store";
 import { OfflineBanner, TopActions } from "./top-bar";
 import { PageHeader } from "./ui";
 import dynamic from "next/dynamic";
+import { BriefingWidget, HotspotsWidget } from "./widgets/intel-widgets";
 import { ActivityWidget, EarthWidget, HistoryWidget, NewsTicker, SkyWidget, WorldClocks } from "./widgets/extra-widgets";
 import { WeatherWidget } from "./widgets/weather";
 import { AlertsWidget, AviationWidget, BriefWidget, MarketsWidget, QuakesWidget, TimelineWidget, TvWidget } from "./widgets/overview-widgets";
@@ -16,7 +17,9 @@ const GlobeHero = dynamic(() => import("./widgets/globe-hero").then((m) => m.Glo
 
 // "map" is rendered as the globe hero at the top, so it is not part of the stack.
 const WIDGET_COMPONENTS: Record<Exclude<WidgetId, "map">, ComponentType> = {
+  briefing: BriefingWidget,
   brief: BriefWidget,
+  hotspots: HotspotsWidget,
   activity: ActivityWidget,
   sky: SkyWidget,
   earth: EarthWidget,

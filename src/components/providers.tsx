@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { usePrefs } from "@/lib/store";
 import { AlertEngine } from "./alert-engine";
 import { DetailSheet } from "./detail-sheet";
@@ -47,7 +47,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <ThemeSync />
       <ServiceWorker />
       <AlertEngine />
-      <DetailSheet />
+      <Suspense fallback={null}>
+        <DetailSheet />
+      </Suspense>
       <PullToRefresh />
       {children}
     </QueryClientProvider>

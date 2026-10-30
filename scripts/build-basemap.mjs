@@ -7,6 +7,7 @@ import { feature } from "topojson-client";
 const require = createRequire(import.meta.url);
 const topo = require("world-atlas/countries-110m.json");
 const geo = feature(topo, topo.objects.countries);
+const iso2ByNumeric = new Map(require("world-countries").map((c) => [c.ccn3, c.cca2]));
 const round = (c) => (typeof c[0] === "number" ? [Math.round(c[0] * 100) / 100, Math.round(c[1] * 100) / 100] : c.map(round));
 // Rings that cross the antimeridian (Russia, Fiji) are shifted east so they render without
 // horizontal artefacts; Antarctica is dropped (no event layers there, and it distorts at low zoom).
@@ -16,7 +17,7 @@ for (const f of geo.features) {
   const g = f.geometry;
   g.coordinates = g.type === "Polygon" ? g.coordinates.map(fixRing) : g.coordinates.map((poly) => poly.map(fixRing));
   f.geometry.coordinates = round(f.geometry.coordinates);
-  f.properties = { name: f.properties.name };
+  f.properties = { name: f.properties.name, iso2: iso2ByNumeric.get(String(f.id).padStart(3, "0")) ?? null };
 }
 mkdirSync("public/basemap", { recursive: true });
 writeFileSync("public/basemap/countries-110m.geojson", JSON.stringify(geo));

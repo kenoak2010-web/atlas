@@ -7,7 +7,7 @@ export type Lang = "de" | "en";
 export type ThemePref = "system" | "light" | "dark";
 export type RefreshMode = "normal" | "saver" | "manual";
 
-export const WIDGETS = ["brief", "activity", "map", "quakes", "weather", "sky", "earth", "alerts", "aviation", "markets", "history", "tv", "timeline"] as const;
+export const WIDGETS = ["briefing", "brief", "activity", "hotspots", "map", "quakes", "weather", "sky", "earth", "alerts", "aviation", "markets", "history", "tv", "timeline"] as const;
 export type WidgetId = (typeof WIDGETS)[number];
 
 export const MAP_LAYERS = ["news", "quakes", "disasters", "weather", "alerts", "wildfires", "volcanoes", "humanitarian", "aircraft", "iss"] as const;

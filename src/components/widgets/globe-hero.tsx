@@ -62,7 +62,7 @@ export function GlobeHero() {
   const news = useNews();
 
   const layers = useMemo(() => {
-    const q = (quakes.data?.data ?? []).filter((e) => e.point).map((e) => ({ lat: e.point!.lat, lon: e.point!.lon, props: { mag: Number(e.meta?.mag ?? 4.5) } }));
+    const q = (quakes.data?.data ?? []).filter((e) => e.point).map((e) => ({ lat: e.point!.lat, lon: e.point!.lon, props: { mag: Number(e.meta?.magnitude ?? 4.5) } }));
     const d = (gdacs.data?.data ?? []).filter((e) => e.point && e.severity >= 2).map((e) => ({ lat: e.point!.lat, lon: e.point!.lon, props: { sev: e.severity } }));
     const n = news.clusters.filter((c) => c.point && (c.breaking || c.sourceCount >= 3)).slice(0, 30).map((c) => ({ lat: c.point!.lat, lon: c.point!.lon, props: { breaking: c.breaking } }));
     const i = iss.data?.data ? [{ lat: iss.data.data.lat, lon: iss.data.data.lon, props: {} }] : [];
