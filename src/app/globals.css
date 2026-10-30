@@ -356,6 +356,12 @@ body {
   border-radius: 10px;
 }
 
+/* Text fields draw their focus ring on their container instead */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 body {
   transition: background-color 300ms ease, color 300ms ease;
 }

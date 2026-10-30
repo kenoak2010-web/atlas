@@ -6,6 +6,7 @@ import { usePrefs } from "@/lib/store";
 import { AlertEngine } from "./alert-engine";
 import { DetailSheet } from "./detail-sheet";
 import { PullToRefresh } from "./pull-to-refresh";
+import { ConnectionToast } from "./connection-toast";
 
 function ThemeSync() {
   const theme = usePrefs((s) => s.theme);
@@ -51,6 +52,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <DetailSheet />
       </Suspense>
       <PullToRefresh />
+      <ConnectionToast />
       {children}
     </QueryClientProvider>
   );

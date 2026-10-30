@@ -15,6 +15,8 @@ const scheme = process.env.SCHEME || "light";
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices["iPhone 14 Pro Max"], colorScheme: scheme });
+  // THEME=light|dark|system forces the stored ATLAS theme (default for new installs is dark).
+  if (process.env.THEME) await ctx.addInitScript((t) => localStorage.setItem("atlas-prefs", JSON.stringify({ state: { theme: t }, version: 1 })), process.env.THEME);
   const page = await ctx.newPage();
   let failures = 0;
   for (const p of paths) {

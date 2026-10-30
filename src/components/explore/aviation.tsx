@@ -125,7 +125,7 @@ export function AviationScreen() {
             )}
           </div>
         )}
-        <div className="mx-4 mb-2 flex h-10 items-center gap-2 rounded-xl bg-surface-2 px-3">
+        <div className="mx-4 mb-2 flex h-10 items-center gap-2 rounded-xl bg-surface-2 px-3 transition-shadow duration-200 focus-within:shadow-[0_0_0_2px_var(--accent)]">
           <Search size={16} className="text-text-2" />
           <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder={`${t("aviation.callsign")} / ICAO24`} aria-label={t("aviation.callsign")} className="min-w-0 flex-1 bg-transparent text-[16px] uppercase outline-none placeholder:normal-case placeholder:text-text-3" autoCapitalize="characters" />
         </div>

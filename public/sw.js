@@ -4,11 +4,11 @@
  * - /api/data/*: network-first; when offline the last cached response is
  *   returned with the header "x-atlas-offline: 1" so the UI labels it "Cached".
  */
-const VERSION = "atlas-v1";
+const VERSION = "atlas-v2";
 const SHELL = `${VERSION}-shell`;
 const STATIC = `${VERSION}-static`;
 const API = `${VERSION}-api`;
-const PRECACHE = ["/", "/map", "/news", "/tv", "/explore", "/offline", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/apple-touch-icon.png", "/basemap/countries-110m.geojson", "/maplibre/maplibre-gl-worker.mjs"];
+const PRECACHE = ["/", "/map", "/news", "/tv", "/explore", "/explore/hazards", "/explore/weather", "/explore/economy", "/explore/space", "/timeline", "/country", "/search", "/settings", "/offline", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/apple-touch-icon.png", "/basemap/countries-110m.geojson", "/maplibre/maplibre-gl-worker.mjs"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

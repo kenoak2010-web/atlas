@@ -44,7 +44,7 @@ function CountryPicker() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={lang === "de" ? "Land suchen" : "Search country"}
-        className="card h-11 w-full rounded-xl px-3 text-[16px] outline-none"
+        className="card h-11 w-full rounded-xl px-3 text-[16px] outline-none transition-shadow duration-200 focus:shadow-[0_0_0_2px_var(--accent)]"
         aria-label={lang === "de" ? "Land suchen" : "Search country"}
       />
       <Card>

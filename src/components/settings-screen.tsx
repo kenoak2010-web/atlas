@@ -87,7 +87,7 @@ export function SettingsScreen() {
       <Card>
         <CardHeader title={t("settings.countries")} />
         <div className="px-4 pb-2">
-          <input value={countryQ} onChange={(e) => setCountryQ(e.target.value)} placeholder={t("search.countries")} aria-label={t("search.countries")} className="h-10 w-full rounded-xl bg-surface-2 px-3 text-[16px] outline-none" />
+          <input value={countryQ} onChange={(e) => setCountryQ(e.target.value)} placeholder={t("search.countries")} aria-label={t("search.countries")} className="h-10 w-full rounded-xl bg-surface-2 px-3 text-[16px] outline-none transition-shadow duration-200 focus:shadow-[0_0_0_2px_var(--accent)]" />
           {countryMatches.length > 0 && (
             <ChipRow className="pt-2">
               {countryMatches.map((c) => <Chip key={c.iso2} active={p.countries.includes(c.iso2)} onClick={() => p.toggleIn("countries", c.iso2)}>{c.flag} {lang === "de" ? c.de : c.en}</Chip>)}

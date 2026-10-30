@@ -43,7 +43,7 @@ export function NewsScreen() {
       <PageHeader title={t("news.title")} action={<TopActions />} />
       <OfflineBanner />
       <div className="space-y-2 px-4">
-        <div className="flex h-10 items-center gap-2 rounded-xl bg-surface-2 px-3">
+        <div className="flex h-10 items-center gap-2 rounded-xl bg-surface-2 px-3 transition-shadow duration-200 focus-within:shadow-[0_0_0_2px_var(--accent)]">
           <Search size={16} className="text-text-2" aria-hidden />
           <input
             value={term}

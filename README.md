@@ -18,11 +18,13 @@ markets and official live TV. Built for iPhone (Safari, Home Screen), German fir
 | Karte | MapLibre map with 3D globe mode and day/night shading: earthquakes, disasters (GDACS/EONET), weather warnings, volcanoes, fires, aircraft (viewport), ISS, news by country |
 | Nachrichten | 18 official RSS feeds, deduplicated and clustered into stories, transparent ranking, topic/region filters, bookmarks |
 | Live-TV | 13 official broadcaster streams via YouTube embeds + 2 official links, favourites |
-| Entdecken | Hazards, weather (world cities, DWD/NWS warnings), aviation, space (ISS, launches, Kp), economy (indices, oil, crypto, FX, market hours), humanitarian |
-| Timeline, Suche | Chronological feed across all sources; search across news, events and places |
+| Entdecken | Hazards with magnitude histogram and timeline, weather (world cities, DWD/NWS warnings), aviation (altitude bands, climb/descent, sorting), space (ISS globe tracker with orbit, launches, Kp chart), economy (top movers, indices, oil, 7 coins with 7-day charts, crypto Fear & Greed, FX, market session progress), humanitarian, country dossiers |
+| Timeline, Suche | Chronological feed grouped by day with a category breakdown; search with trending countries, ideas, news, events and places |
+| Lagebriefing, Brennpunkte | Rule-based briefing assembled from live data (each line names its source); countries ranked by coverage and events |
 | Warnungen | Rule-based in-app alerts: earthquakes above a magnitude, breaking news, severe weather, GDACS disasters, events near saved places, watchlist market moves |
 | Personalisierung | Theme, language, refresh mode, topics, countries, places, watchlists – stored on the device |
-| PWA | Installable, offline shell + last data, safe areas, dark mode |
+| PWA | Installable, offline shell + last data, offline/online toast, pull to refresh, safe areas, dark mode |
+| Motion | Page transitions, staggered lists, spring sheets, sliding tab and segmented highlights, self-drawing charts, count-up numbers; all disabled with “Reduce Motion” |
 
 ## Quick start
 

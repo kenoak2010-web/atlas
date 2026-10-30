@@ -47,7 +47,7 @@ export function PlaceSearch({ onPick, placeholder }: { onPick: (p: PickedPlace) 
   };
   return (
     <div className="relative">
-      <div className="flex h-11 items-center gap-2 rounded-xl bg-surface/95 px-3 shadow-[var(--shadow)] backdrop-blur dark:bg-surface-2/95">
+      <div className="flex h-11 items-center gap-2 rounded-xl bg-surface/95 px-3 shadow-[var(--shadow)] backdrop-blur dark:bg-surface-2/95 transition-shadow duration-200 focus-within:shadow-[0_0_0_2px_var(--accent)]">
         <Search size={17} className="text-text-2" aria-hidden />
         <input
           value={q}

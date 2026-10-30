@@ -26,7 +26,9 @@ Last live verification: **2026-10-28**, from a cloud container (`npm run verify:
 | space-weather | [NOAA SWPC](https://www.swpc.noaa.gov) Kp index + alerts | 10 min | – | – | ✅ |
 | launches | [Launch Library 2](https://thespacedevs.com/llapi) upcoming | 1 h | – | Anonymous 15 req/h | ✅ 12 launches |
 | markets | [FRED](https://fred.stlouisfed.org) daily closes: S&P 500, NASDAQ, Dow, Nikkei 225, Brent, WTI | 3 h | – | Public CSV | ✅ 6 series (delayed, end of day) |
-| crypto | [CoinGecko](https://www.coingecko.com/en/api) simple price (BTC, ETH) | 2 min | optional `COINGECKO_DEMO_KEY` | ~5–15 calls/min public | ✅ |
+| crypto | [CoinGecko](https://www.coingecko.com/en/api) coins/markets (BTC, ETH, SOL, XRP, BNB, ADA, DOGE) incl. 7-day sparkline | 2 min | optional `COINGECKO_DEMO_KEY` | ~5–15 calls/min public | ✅ 2026-10-30 |
+| fear-greed | [Alternative.me Crypto Fear & Greed Index](https://alternative.me/crypto/fear-and-greed-index/), last 30 days | 1 h (updates daily) | – | 60 req/min | ✅ 2026-10-30 |
+| iss-track | wheretheiss.at predicted ground track, one orbit (~95 min) in 5-min steps | 5 min | – | 2 calls per refresh, 1.1 s apart | ✅ |
 | crypto-chart | CoinGecko 30-day history | 1 h | optional | same | ✅ |
 | fx | [Frankfurter](https://frankfurter.dev) (ECB reference rates) | 1 h | – | – | ✅ (ECB publishes ~16:00 CET on working days) |
 | geocode | [Photon](https://photon.komoot.io) (OpenStreetMap) place search | 24 h cache | – | Fair use; input debounced | ✅ |
