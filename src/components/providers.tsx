@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePrefs } from "@/lib/store";
 import { AlertEngine } from "./alert-engine";
 import { DetailSheet } from "./detail-sheet";
+import { PullToRefresh } from "./pull-to-refresh";
 
 function ThemeSync() {
   const theme = usePrefs((s) => s.theme);
@@ -14,7 +15,7 @@ function ThemeSync() {
     const apply = () => {
       const dark = theme === "dark" || (theme === "system" && mq.matches);
       document.documentElement.dataset.theme = dark ? "dark" : "light";
-      document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute("content", dark ? "#000000" : "#f5f5f7");
+      document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute("content", dark ? "#04060c" : "#eef1f7");
     };
     apply();
     mq.addEventListener("change", apply);
@@ -47,6 +48,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ServiceWorker />
       <AlertEngine />
       <DetailSheet />
+      <PullToRefresh />
       {children}
     </QueryClientProvider>
   );

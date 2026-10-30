@@ -87,6 +87,10 @@ export function GlobeHero() {
     mapRef.current = map;
     let raf = 0;
     let last = 0;
+    // Only animate while the globe is on screen (saves battery while scrolling the feed).
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
+    io.observe(el.current);
     let t0 = 0;
     map.on("load", () => {
       map.addSource("night", { type: "geojson", data: EMPTY });
@@ -103,12 +107,12 @@ export function GlobeHero() {
 
       const frame = (ts: number) => {
         raf = requestAnimationFrame(frame);
-        if (document.hidden || ts - last < 33) return;
+        if (document.hidden || !visible || ts - last < 40) return;
         if (!t0) t0 = ts;
         last = ts;
         if (!reduce) {
           const c = map.getCenter();
-          map.setCenter([c.lng - 0.06, c.lat]);
+          map.setCenter([c.lng - 0.07, c.lat]);
           const phase = ((ts - t0) % 1800) / 1800;
           map.setPaintProperty("quakes-pulse", "circle-radius", 4 + phase * 14);
           map.setPaintProperty("quakes-pulse", "circle-opacity", 0.45 * (1 - phase));
@@ -117,6 +121,7 @@ export function GlobeHero() {
       raf = requestAnimationFrame(frame);
     });
     return () => {
+      io.disconnect();
       cancelAnimationFrame(raf);
       ready.current = false;
       mapRef.current = null;

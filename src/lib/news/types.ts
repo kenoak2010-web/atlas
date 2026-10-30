@@ -26,6 +26,8 @@ export interface Article {
   countries: string[];
   /** Editorial weighting of the source (0..1). Not a measure of truth. */
   reliability: number;
+  /** Teaser image URL provided by the feed (https), if any */
+  image?: string | null;
 }
 
 export interface ScoreBreakdown {
@@ -54,6 +56,8 @@ export interface NewsCluster {
   point: { lat: number; lon: number; precision: "country" } | null;
   breaking: boolean;
   score: ScoreBreakdown;
+  /** First available feed image among the cluster's articles */
+  image?: string | null;
 }
 
 export interface FeedStatus {

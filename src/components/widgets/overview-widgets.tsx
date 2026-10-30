@@ -10,7 +10,7 @@ import { usePrefs } from "@/lib/store";
 import { CHANNELS } from "@/lib/channels";
 import { formatNumber, formatPct } from "@/lib/format";
 import type { Quote } from "@/server/providers/markets";
-import { useNews, NewsRow } from "../news";
+import { useNews, NewsHero, NewsRow } from "../news";
 import { EventRow } from "../events";
 import { useTimeline, TimelineList } from "../timeline";
 import { Card, CardHeader, DataMeta, Divided, Empty, ErrorState, ListSkeleton, cn } from "../ui";
@@ -25,7 +25,8 @@ export function BriefWidget() {
         <ListSkeleton rows={4} />
       ) : q.data?.data ? (
         <Divided>
-          {q.clusters.slice(0, 6).map((c) => (
+          {q.clusters[0] && <div className="px-3 pb-2"><NewsHero c={q.clusters[0]} /></div>}
+          {q.clusters.slice(1, 6).map((c) => (
             <NewsRow key={c.id} c={c} compact />
           ))}
         </Divided>

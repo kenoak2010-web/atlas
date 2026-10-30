@@ -6,7 +6,7 @@ import { useProvider } from "@/lib/api";
 import { useT, type TKey } from "@/lib/i18n";
 import type { Region, Topic } from "@/lib/news/types";
 import type { GdeltArticle } from "@/server/providers/news";
-import { useNews, NewsRow } from "./news";
+import { useNews, NewsHero, NewsRow } from "./news";
 import { OfflineBanner, TopActions } from "./top-bar";
 import { Card, Chip, ChipRow, DataMeta, Divided, Empty, ErrorState, ListSkeleton, PageHeader, RelTime, Segmented } from "./ui";
 
@@ -80,6 +80,7 @@ export function NewsScreen() {
       {gdelt && <GdeltResults q={gdelt} onClose={() => setGdelt(null)} />}
 
       <div className="mt-2 px-4">
+        {filtered[0] && <div className="mb-3"><NewsHero c={filtered[0]} /></div>}
         <Card>
           {q.isPending ? (
             <ListSkeleton rows={6} />
@@ -87,7 +88,7 @@ export function NewsScreen() {
             <ErrorState message={q.data?.error ?? q.error?.message ?? ""} onRetry={() => q.refetch()} />
           ) : filtered.length ? (
             <Divided>
-              {filtered.slice(0, limit).map((c) => (
+              {filtered.slice(1, limit).map((c) => (
                 <NewsRow key={c.id} c={c} />
               ))}
             </Divided>

@@ -21,13 +21,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#eef1f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#04060c" },
   ],
 };
 
 // Applies the stored theme before first paint to avoid a light/dark flash.
-const THEME_SCRIPT = `try{var p=JSON.parse(localStorage.getItem("atlas-prefs")||"{}").state||{};var t=p.theme||"system";var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";if(p.lang)document.documentElement.lang=p.lang}catch(e){}`;
+const THEME_SCRIPT = `try{var p=JSON.parse(localStorage.getItem("atlas-prefs")||"{}").state||{};var t=p.theme||"dark";var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";if(p.lang)document.documentElement.lang=p.lang}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

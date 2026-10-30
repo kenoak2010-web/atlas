@@ -34,6 +34,7 @@ export function toArticles(feed: FeedDef, items: RawItem[], now = Date.now()): A
       topics: classifyTopics(text, feed.topics),
       countries: detectCountries(text),
       reliability: feed.reliability,
+      image: it.image,
     });
   }
   return out;

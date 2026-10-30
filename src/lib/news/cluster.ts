@@ -96,6 +96,7 @@ export function clusterArticles(input: Article[], now = Date.now(), interests?: 
       regions,
       point: countries.length ? countryPoint(countries[0]) : null,
       breaking,
+      image: lead.image ?? group.find((a) => a.image)?.image ?? null,
       score: { severity: 0, sources: 0, recency: 0, reliability: 0, interest: 0, total: 0 },
     };
     cluster.score = scoreCluster(cluster, severity, now, interests);

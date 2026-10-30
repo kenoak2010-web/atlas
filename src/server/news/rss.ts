@@ -7,6 +7,8 @@ export interface RawItem {
   summary: string;
   publishedAt: string | null;
   guid: string;
+  /** Teaser image offered by the feed itself (media:content, media:thumbnail, enclosure or inline <img>) */
+  image: string | null;
 }
 
 const parser = new XMLParser({
@@ -35,6 +37,35 @@ function atomLink(v: unknown): string {
   return "";
 }
 
+function attrUrl(v: unknown, requireImage: boolean): string | null {
+  for (const m of asArray(v as Record<string, string> | Record<string, string>[])) {
+    if (!m || typeof m !== "object") continue;
+    const url = m["@_url"] ?? m["@_href"];
+    const type = m["@_type"] ?? "";
+    const medium = m["@_medium"] ?? "";
+    if (!url) continue;
+    if (requireImage && !(type.startsWith("image/") || medium === "image" || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url))) continue;
+    const u = safeUrl(url);
+    if (u?.startsWith("https://")) return u;
+  }
+  return null;
+}
+
+/** Feed-provided teaser image, https only. */
+export function feedImage(it: Record<string, unknown>): string | null {
+  const group = it["media:group"] as Record<string, unknown> | undefined;
+  const fromAttrs =
+    attrUrl(it["media:content"], true) ??
+    attrUrl(group?.["media:content"], true) ??
+    attrUrl(it["media:thumbnail"], false) ??
+    attrUrl(group?.["media:thumbnail"], false) ??
+    attrUrl(it.enclosure, true);
+  if (fromAttrs) return fromAttrs;
+  const html = text(it["content:encoded"]) || text(it.description) || text(it.content);
+  const m = /<img[^>]+src=["'](https:[^"']+)["']/i.exec(html);
+  return m ? (safeUrl(m[1].replace(/&amp;/g, "&")) ?? null) : null;
+}
+
 export function parseDate(v: string): string | null {
   if (!v) return null;
   const t = Date.parse(v.trim());
@@ -59,7 +90,7 @@ export function parseFeed(xml: string): RawItem[] {
     if (!title || !link) continue;
     const summary = htmlToText(text(it.description) || text(it.summary) || text(it["content:encoded"]) || text(it.content), 320);
     const date = text(it.pubDate) || text(it["dc:date"]) || text(it.published) || text(it.updated);
-    out.push({ title, link, summary, publishedAt: parseDate(date), guid: text(it.guid) || link });
+    out.push({ title, link, summary, publishedAt: parseDate(date), guid: text(it.guid) || link, image: feedImage(it) });
   }
   return out;
 }

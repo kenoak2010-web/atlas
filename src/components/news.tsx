@@ -1,7 +1,7 @@
 "use client";
 
 import { Bookmark, BookmarkCheck, Share } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useProvider } from "@/lib/api";
 import { useT, type TKey } from "@/lib/i18n";
 import { applyInterests } from "@/lib/news/score";
@@ -28,19 +28,54 @@ export function NewsLabel({ c }: { c: NewsCluster }) {
   return null;
 }
 
+/** Feed-provided teaser image. Hidden if it fails to load (hotlink protection, offline). */
+export function NewsImage({ src, className }: { src: string | null | undefined; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- remote publisher image from the RSS feed
+    <img src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} className={cn("bg-surface-2 object-cover", className)} />
+  );
+}
+
+/** Large lead-story card with image and gradient overlay. */
+export function NewsHero({ c }: { c: NewsCluster }) {
+  const select = useSelection((s) => s.select);
+  const country = c.countries[0] ? COUNTRY_BY_ISO2.get(c.countries[0]) : undefined;
+  return (
+    <button onClick={() => select({ type: "news", cluster: c })} className="press relative block w-full overflow-hidden rounded-[18px] bg-surface-2 text-left">
+      <NewsImage src={c.image} className="aspect-[16/10] w-full" />
+      {!c.image && <div className="bg-accent-gradient aspect-[16/10] w-full opacity-40" aria-hidden />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+        <div className="mb-1.5 flex items-center gap-2 text-[12px] text-white/80">
+          <NewsLabel c={c} />
+          <span className="font-semibold text-white">{c.articles[0].sourceName}</span>
+          {c.sourceCount > 1 && <span>+{c.sourceCount - 1}</span>}
+          <span aria-hidden>·</span>
+          <RelTime iso={c.lastUpdated} />
+          {country && <span className="ml-auto">{country.flag}</span>}
+        </div>
+        <div className="text-[20px] leading-tight font-bold tracking-tight [text-wrap:balance]">{c.title}</div>
+      </div>
+    </button>
+  );
+}
+
 export function NewsRow({ c, compact }: { c: NewsCluster; compact?: boolean }) {
   const { t } = useT();
   const select = useSelection((s) => s.select);
   const country = c.countries[0] ? COUNTRY_BY_ISO2.get(c.countries[0]) : undefined;
   return (
-    <button onClick={() => select({ type: "news", cluster: c })} className="flex w-full flex-col gap-1 px-4 py-3 text-left active:bg-surface-2">
-      <div className="flex items-center gap-2 text-[12px] text-text-2">
-        <NewsLabel c={c} />
-        <span className="font-medium">{c.articles[0].sourceName}</span>
-        {c.sourceCount > 1 && <span>+{c.sourceCount - 1}</span>}
+    <button onClick={() => select({ type: "news", cluster: c })} className="flex w-full gap-3 px-4 py-3 text-left transition-colors active:bg-surface-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-w-0 items-center gap-1.5 text-[12px] whitespace-nowrap text-text-2">
+        <span className="shrink-0"><NewsLabel c={c} /></span>
+        <span className="min-w-0 truncate font-medium">{c.articles[0].sourceName}</span>
+        {c.sourceCount > 1 && <span className="shrink-0">+{c.sourceCount - 1}</span>}
         <span aria-hidden>·</span>
-        <RelTime iso={c.lastUpdated} />
-        {country && <span className="ml-auto truncate">{country.flag}</span>}
+        <RelTime iso={c.lastUpdated} className="shrink-0" />
+        {country && <span className="ml-auto shrink-0">{country.flag}</span>}
       </div>
       <div className={cn("font-semibold tracking-tight", compact ? "text-[15px] leading-snug" : "text-[16px] leading-snug")}>{c.title}</div>
       {!compact && c.summary && <div className="line-clamp-2 text-[13px] text-text-2">{c.summary}</div>}
@@ -51,6 +86,8 @@ export function NewsRow({ c, compact }: { c: NewsCluster; compact?: boolean }) {
           ))}
         </div>
       )}
+      </div>
+      <NewsImage src={c.image} className={cn("shrink-0 rounded-xl", compact ? "h-16 w-16" : "h-20 w-20")} />
     </button>
   );
 }
@@ -64,6 +101,7 @@ export function NewsDetail({ c }: { c: NewsCluster }) {
   const share = () => navigator.share?.({ title: c.title, url: c.url }).catch(() => undefined);
   return (
     <div className="space-y-4">
+      <NewsImage src={c.image} className="aspect-[16/9] w-full rounded-2xl" />
       <div className="flex items-center gap-2 text-[12px] text-text-2">
         <NewsLabel c={c} />
         <RelTime iso={c.lastUpdated} />
