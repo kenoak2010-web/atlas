@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "public/**",
     "coverage/**", "scripts/**/*.cjs",
+    // Native iOS project (Capacitor) and its offline fallback page.
+    "ios/**", "native-shell/**",
   ]),
 ]);
 

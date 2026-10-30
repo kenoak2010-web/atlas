@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { usePrefs } from "@/lib/store";
+import { initNative, isNative } from "@/lib/native";
 import { AlertEngine } from "./alert-engine";
 import { DetailSheet } from "./detail-sheet";
 import { PullToRefresh } from "./pull-to-refresh";
@@ -30,9 +32,16 @@ function ThemeSync() {
 
 function ServiceWorker() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator) || process.env.NODE_ENV !== "production") return;
+    // The iOS app shows its own offline page, so the service worker is only for the PWA.
+    if (!("serviceWorker" in navigator) || process.env.NODE_ENV !== "production" || isNative()) return;
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((e) => console.warn("SW registration failed", e));
   }, []);
+  return null;
+}
+
+function NativeBridge() {
+  const router = useRouter();
+  useEffect(() => initNative((url) => router.push(url)), [router]);
   return null;
 }
 
@@ -47,6 +56,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={client}>
       <ThemeSync />
       <ServiceWorker />
+      <NativeBridge />
       <AlertEngine />
       <Suspense fallback={null}>
         <DetailSheet />

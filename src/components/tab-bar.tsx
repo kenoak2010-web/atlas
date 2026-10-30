@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, Globe2, Map, Newspaper, Tv } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { haptic } from "@/lib/native";
 import { cn } from "./ui";
 
 const TABS = [
@@ -34,6 +35,7 @@ export function TabBar() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
+                onClick={() => !active && haptic()}
                 className={cn("press flex min-h-[58px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors", active ? "text-accent" : "text-text-3")}
               >
                 <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-transform duration-300", active && "scale-110")}>

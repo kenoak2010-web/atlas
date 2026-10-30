@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Languages, MoonStar, RefreshCw, Trash2 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { MAP_LAYERS, usePrefs, type RefreshMode, type ThemePref } from "@/lib/store";
 import type { Topic } from "@/lib/news/types";
 import { COUNTRIES } from "@/lib/news/geotag";
+import { canNotify, isNative, requestNotifyPermission } from "@/lib/native";
 import { PlaceSearch } from "./place-search";
 import { SubPage } from "./sub-page";
 import { Card, CardHeader, Chip, ChipRow, Divided, Segmented, Toggle } from "./ui";
@@ -24,22 +26,26 @@ function Line({ label, icon, children, stack }: { label: string; icon?: React.Re
   );
 }
 
+const noSubscribe = () => () => undefined;
+
 export function SettingsScreen() {
   const { t, lang } = useT();
   const p = usePrefs();
   const [countryQ, setCountryQ] = useState("");
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+  // Inside the iOS app there is nothing to install, so the Home Screen hint is hidden.
+  const native = useSyncExternalStore(noSubscribe, isNative, () => false);
   const countryMatches = countryQ.length >= 2 ? COUNTRIES.filter((c) => c.de.toLowerCase().includes(countryQ.toLowerCase()) || c.en.toLowerCase().includes(countryQ.toLowerCase())).slice(0, 6) : [];
 
   const enableNotify = async (on: boolean) => {
     if (!on) return p.setAlerts({ notify: false });
-    if (typeof Notification === "undefined") {
+    if (!canNotify()) {
       setNotifMsg(lang === "de" ? "Dieser Browser unterstützt keine Benachrichtigungen. Auf dem iPhone: zuerst zum Home-Bildschirm hinzufügen." : "Notifications are not supported here. On iPhone: add to Home Screen first.");
       return;
     }
-    const perm = await Notification.requestPermission();
-    p.setAlerts({ notify: perm === "granted" });
-    setNotifMsg(perm === "granted" ? null : lang === "de" ? "Berechtigung nicht erteilt." : "Permission not granted.");
+    const granted = await requestNotifyPermission();
+    p.setAlerts({ notify: granted });
+    setNotifMsg(granted ? null : lang === "de" ? "Berechtigung nicht erteilt." : "Permission not granted.");
   };
 
   return (
@@ -153,10 +159,12 @@ export function SettingsScreen() {
         {notifMsg && <p className="px-4 pb-4 text-[12px] text-red">{notifMsg}</p>}
       </Card>
 
-      <Card>
-        <CardHeader title={t("settings.install")} />
-        <p className="px-4 pb-4 text-[14px] text-text-2">{t("settings.installSteps")}</p>
-      </Card>
+      {!native && (
+        <Card>
+          <CardHeader title={t("settings.install")} />
+          <p className="px-4 pb-4 text-[14px] text-text-2">{t("settings.installSteps")}</p>
+        </Card>
+      )}
 
       <Card>
         <CardHeader title={t("settings.about")} />
@@ -165,6 +173,9 @@ export function SettingsScreen() {
             ? "ATLAS speichert Einstellungen nur lokal auf diesem Gerät (localStorage). Es gibt kein Konto und kein Tracking. Standort wird nur nach ausdrücklicher Zustimmung und nur für Wetter/Karte verwendet."
             : "ATLAS stores settings only on this device (localStorage). No account, no tracking. Location is only used after explicit permission, for weather/map."}
         </p>
+        <Link href="/privacy" className="press mx-4 mb-4 inline-flex min-h-[44px] items-center text-[15px] font-medium text-accent">
+          {lang === "de" ? "Datenschutzerklärung" : "Privacy policy"}
+        </Link>
       </Card>
 
       <button onClick={() => confirm(t("settings.reset") + "?") && p.reset()} className="mx-auto flex min-h-[44px] items-center text-[15px] text-red">{t("settings.reset")}</button>

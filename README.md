@@ -84,6 +84,7 @@ Adding a source: create a `defineProvider({...})` adapter in `src/server/provide
 
 - [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) – every source, refresh rate, key, limits, verification status
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) – deploy free on Vercel, install on iPhone
+- [docs/APP_STORE.md](docs/APP_STORE.md) – native iOS app (Capacitor) and App Store release, in German
 - [.env.example](.env.example) – optional configuration
 
 ## Known limitations
