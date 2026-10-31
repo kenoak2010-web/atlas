@@ -41,11 +41,20 @@ Last live verification: **2026-10-28**, from a cloud container (`npm run verify:
 ## News feeds
 
 German: tagesschau, DW (de), ZDFheute, DER SPIEGEL.
+German domestic & regional (added 2026-10-31, all ✅ live): tagesschau Inland, Deutschlandfunk, Süddeutsche Zeitung (Politik),
+ZEIT ONLINE (Deutschland), DER SPIEGEL (Deutschland), taz, Frankfurter Rundschau (Politik), MDR, rbb24, WDR, SWR, hessenschau.
+Not available: NDR and BR (no working public RSS URL found, 404).
 English: BBC World / Business / Technology / Science, DW (en), Al Jazeera, France 24,
 The Guardian (World), NPR (World), The New York Times (World), UN News, WHO, NASA, Simple Flying.
 
 ATLAS shows only headline, short teaser text from the feed and a link to the original
 article. It does not fetch or reproduce full articles and does not bypass paywalls.
+
+**Proteste Deutschland tag** (`protest_de`, rules in `src/lib/news/protest.ts`): set when the headline names a
+protest form (Demo, Demonstration, Kundgebung, Protest, Streik/Warnstreik, Mahnwache, Sitzblockade, Menschenkette …)
+and the story has a German context: a German union/group (Verdi, GDL, IG Metall, Letzte Generation …), a German
+state/city, "Deutschland" detected, or a domestic German feed that names no other country. Stories that lead with
+another country are not tagged. Deep link: `/news?topic=protest_de`.
 
 News items are placed on the map only at **country level** (approximate centroid), and only when a
 country is named in the headline or teaser. ATLAS never invents precise coordinates for news.

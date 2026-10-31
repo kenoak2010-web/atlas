@@ -8,7 +8,9 @@ export type Topic =
   | "space"
   | "environment"
   | "disaster"
-  | "health";
+  | "health"
+  /** Demonstrations, strikes and rallies in Germany (see protest.ts) */
+  | "protest_de";
 
 export type Region = "europe" | "americas" | "asia" | "africa" | "oceania";
 
