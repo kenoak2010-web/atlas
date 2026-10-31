@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Globe2, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Globe2, Megaphone, Search } from "lucide-react";
 import { useProvider } from "@/lib/api";
 import { useT, type TKey } from "@/lib/i18n";
 import type { Region, Topic } from "@/lib/news/types";
@@ -10,7 +10,7 @@ import { useNews, NewsHero, NewsRow } from "./news";
 import { OfflineBanner, TopActions } from "./top-bar";
 import { Card, Chip, ChipRow, DataMeta, Divided, Empty, ErrorState, ListSkeleton, PageHeader, RelTime, Segmented } from "./ui";
 
-const TOPICS: Topic[] = ["politics", "conflict", "economy", "technology", "science", "aviation", "space", "environment", "disaster", "health"];
+const TOPICS: Topic[] = ["protest_de", "politics", "conflict", "economy", "technology", "science", "aviation", "space", "environment", "disaster", "health"];
 const REGIONS: Region[] = ["europe", "americas", "asia", "africa", "oceania"];
 const PAGE = 30;
 
@@ -23,6 +23,15 @@ export function NewsScreen() {
   const [term, setTerm] = useState("");
   const [limit, setLimit] = useState(PAGE);
   const [gdelt, setGdelt] = useState<string | null>(null);
+
+  // Deep link: /news?topic=protest_de
+  useEffect(() => {
+    const tp = new URLSearchParams(window.location.search).get("topic") as Topic | null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read deep link once
+    if (tp && TOPICS.includes(tp)) setTopic(tp);
+  }, []);
+
+  const protestCount = useMemo(() => q.clusters.filter((c) => c.topics.includes("protest_de")).length, [q.clusters]);
 
   const filtered = useMemo(() => {
     const s = term.trim().toLowerCase();
@@ -63,7 +72,11 @@ export function NewsScreen() {
         <ChipRow>
           <Chip active={!topic} onClick={() => setTopic(null)}>{t("common.all")}</Chip>
           {TOPICS.map((tp) => (
-            <Chip key={tp} active={topic === tp} onClick={() => setTopic(topic === tp ? null : tp)}>{t(`topic.${tp}` as TKey)}</Chip>
+            <Chip key={tp} active={topic === tp} onClick={() => setTopic(topic === tp ? null : tp)}>
+              {tp === "protest_de" && <Megaphone size={13} aria-hidden />}
+              {t(`topic.${tp}` as TKey)}
+              {tp === "protest_de" && protestCount > 0 && <span className="tabular opacity-70">{protestCount}</span>}
+            </Chip>
           ))}
         </ChipRow>
         <ChipRow>

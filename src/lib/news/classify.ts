@@ -4,7 +4,7 @@ import type { Topic } from "./types";
  * Transparent keyword rules for topic classification (German + English).
  * Matches on word starts so "earthquake" also hits "earthquakes".
  */
-export const TOPIC_KEYWORDS: Record<Topic, string[]> = {
+export const TOPIC_KEYWORDS: Record<Exclude<Topic, "protest_de">, string[]> = {
   conflict: [
     "war", "military", "missile", "airstrike", "air strike", "troops", "ceasefire", "drone strike", "shelling", "attack", "militant",
     "hamas", "hezbollah", "nato", "invasion", "frontline", "insurgent", "rebels", "bombing", "killed in",

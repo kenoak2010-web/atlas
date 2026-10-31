@@ -14,7 +14,7 @@ export const newsProvider = defineProvider({
   category: "news",
   refreshSeconds: 300,
   freshnessClass: "periodic",
-  attribution: { name: "tagesschau, DW, ZDF, SPIEGEL, BBC, Al Jazeera, France 24, Guardian, NPR, NYT, UN News, WHO, NASA, Simple Flying", url: "/sources" },
+  attribution: { name: "tagesschau, DW, ZDF, SPIEGEL, Deutschlandfunk, SZ, ZEIT, taz, FR, MDR, rbb24, WDR, SWR, hessenschau, BBC, Al Jazeera, France 24, Guardian, NPR, NYT, UN News, WHO, NASA, Simple Flying", url: "/sources" },
   rateLimit: "Each feed is requested at most once every 5 minutes.",
   note: "Headlines and teasers only, linked to the original article. Location = country mentioned in the headline (approximate).",
   params: z.object({}),
@@ -24,12 +24,23 @@ export const newsProvider = defineProvider({
     const results = await Promise.allSettled(FEEDS.map((f) => fetchText(f.url, { timeoutMs: 10_000, headers: { Accept: "application/rss+xml, application/xml, text/xml, */*" } })));
     const feeds: FeedStatus[] = [];
     const articles: Article[] = [];
+    const byUrl = new Map<string, Article>();
     results.forEach((r, i) => {
       const f = FEEDS[i];
       if (r.status === "fulfilled") {
         try {
           const items = toArticles(f, parseFeed(r.value), now);
-          articles.push(...items);
+          // Section feeds (e.g. tagesschau Inland) repeat items of the outlet's main feed.
+          for (const it of items) {
+            const prev = byUrl.get(it.url);
+            if (!prev) {
+              byUrl.set(it.url, it);
+              articles.push(it);
+            } else {
+              for (const tp of it.topics) if (!prev.topics.includes(tp)) prev.topics.push(tp);
+              if (!prev.countries.length) prev.countries = it.countries;
+            }
+          }
           feeds.push({ id: f.id, name: f.source, ok: true, count: items.length, error: null });
         } catch (e) {
           feeds.push({ id: f.id, name: f.source, ok: false, count: 0, error: `Parse error: ${(e as Error).message}` });

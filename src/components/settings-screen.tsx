@@ -10,7 +10,7 @@ import { PlaceSearch } from "./place-search";
 import { SubPage } from "./sub-page";
 import { Card, CardHeader, Chip, ChipRow, Divided, Segmented, Toggle } from "./ui";
 
-const TOPICS: Topic[] = ["politics", "conflict", "economy", "technology", "science", "aviation", "space", "environment", "disaster", "health"];
+const TOPICS: Topic[] = ["protest_de", "politics", "conflict", "economy", "technology", "science", "aviation", "space", "environment", "disaster", "health"];
 
 function Line({ label, icon, children, stack }: { label: string; icon?: React.ReactNode; children: React.ReactNode; stack?: boolean }) {
   return (

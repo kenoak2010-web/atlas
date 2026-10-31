@@ -1,5 +1,6 @@
 import { classifyTopics } from "@/lib/news/classify";
 import { detectCountries } from "@/lib/news/geotag";
+import { isGermanProtest } from "@/lib/news/protest";
 import type { Article } from "@/lib/news/types";
 import type { FeedDef } from "./feeds";
 import type { RawItem } from "./rss";
@@ -22,6 +23,12 @@ export function toArticles(feed: FeedDef, items: RawItem[], now = Date.now()): A
     // Ignore items dated in the future (> 10 min clock skew) or older than 7 days.
     if (t > now + 10 * 60_000 || now - t > 7 * 86400_000) continue;
     const text = `${it.title}. ${it.summary}`;
+    const topics = classifyTopics(text, feed.topics);
+    let countries = detectCountries(text);
+    if (isGermanProtest(it.title, it.summary, countries, feed.domestic)) {
+      topics.push("protest_de");
+      if (!countries.length) countries = ["DE"];
+    }
     out.push({
       id: `${feed.id}:${hash(it.guid)}`,
       title: it.title,
@@ -31,8 +38,8 @@ export function toArticles(feed: FeedDef, items: RawItem[], now = Date.now()): A
       sourceName: feed.source,
       lang: feed.lang,
       publishedAt: it.publishedAt,
-      topics: classifyTopics(text, feed.topics),
-      countries: detectCountries(text),
+      topics,
+      countries,
       reliability: feed.reliability,
       image: it.image,
     });
